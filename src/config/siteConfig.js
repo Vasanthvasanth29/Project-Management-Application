@@ -35,9 +35,10 @@
  * The member-based calculator remains the authoritative pricing surface.
  */
 export const site = {
-    name: 'FlowExec',
+    name: 'Limber Lithe',
+    fullName: 'Limber Lithe Technologies',
     tagline: 'Smart Project Management Software for Growing Teams',
-    description: 'FlowExec is a premium project management SaaS for growing teams — plan sprints, track work on Kanban boards, collaborate in one place, and deliver projects on time.',
+    description: 'Limber Lithe Technologies delivers modern project management for agile teams — plan sprints, track work on Kanban boards, collaborate in one place, and deliver projects on time.',
 };
 export const payments = {
     /** Stays false until the payment activation is confirmed. */

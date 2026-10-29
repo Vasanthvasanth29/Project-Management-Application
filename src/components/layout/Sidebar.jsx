@@ -121,11 +121,9 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
       <div className={`p-3 flex-shrink-0 ${iconOnly ? 'px-2' : 'px-3'}`}>
         {!iconOnly ? (<div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-2.5 min-w-0 cursor-pointer group flex-1" onClick={() => navigate(getDashboardPath(currentUser.role))}>
-              {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-white/15 group-hover:scale-105 transition-transform"/>) : (<div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(135deg, #0d9488, #06b6d4)' }}>
-                  <Layers className="w-4 h-4 text-white"/>
-                </div>)}
+              {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-white/15 group-hover:scale-105 transition-transform"/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" className="w-8 h-8 object-contain flex-shrink-0 group-hover:scale-105 transition-transform"/>)}
               <div className="min-w-0">
-                <span className="text-sm font-bold text-white tracking-tight font-display block truncate">FlowExec</span>
+                <span className="text-sm font-bold text-white tracking-tight font-display block truncate">Limber Lithe</span>
                 <span className="text-[10px] text-teal-400 font-medium truncate block">{getRoleLabel(currentUser.role)}</span>
               </div>
             </div>
@@ -140,9 +138,7 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
                 <X className="w-4 h-4"/>
               </button>)}
           </div>) : (<div className="flex flex-col items-center py-1 gap-2">
-            {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title="FlowExec Dashboard" className="w-10 h-10 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-white/15" onClick={() => navigate(getDashboardPath(currentUser.role))}/>) : (<div className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" style={{ background: 'linear-gradient(135deg, #0d9488, #06b6d4)' }} title="FlowExec Dashboard" onClick={() => navigate(getDashboardPath(currentUser.role))}>
-                <Layers className="w-5 h-5 text-white"/>
-              </div>)}
+            {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title="Limber Lithe Dashboard" className="w-10 h-10 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-white/15" onClick={() => navigate(getDashboardPath(currentUser.role))}/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" title="Limber Lithe Dashboard" className="w-9 h-9 object-contain cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate(getDashboardPath(currentUser.role))}/>)}
 
             {/* Expand button inside navigation bar when iconOnly */}
             {onToggleCollapse && (<button type="button" onClick={onToggleCollapse} className="w-10 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="Expand sidebar" aria-label="Expand sidebar">

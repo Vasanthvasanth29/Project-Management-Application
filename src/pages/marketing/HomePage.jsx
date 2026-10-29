@@ -1,73 +1,18 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BarChart3, CalendarRange, CheckCircle2, KanbanSquare, Map, ShieldCheck, Users, Workflow, Zap, Target, TrendingUp, ChevronRight, Play, GitBranch, Split, Repeat, Hourglass, } from 'lucide-react';
+import { ArrowRight, BarChart3, CalendarRange, CheckCircle2, KanbanSquare, Map, ShieldCheck, Users, Workflow, Zap, Target, TrendingUp, ChevronRight, ChevronDown, Play, Hourglass, } from 'lucide-react';
 import { ProductPreview } from './ProductPreview';
-import { AccessMock, BurndownMock, CapacityMock, CollaborationMock, IterationMock, ReleaseMock, ReportingMock, RoadmapMock, TaskBoardMock, } from './FeaturePreviews';
+import { ClickUpProductShowcase } from './ClickUpProductShowcase';
+import { AccessMock, BurndownMock, CapacityMock, ReleaseMock, RoadmapMock, WorkflowMock, } from './FeaturePreviews';
 import { WorkflowShowcase } from './WorkflowShowcase';
+import { ProductCapabilitiesHorizontalZigzag } from './ProductCapabilitiesHorizontalZigzag';
+import { RoadmapDeliverySection } from './RoadmapDeliverySection';
 import { MemberPricingSection } from './MemberPricing';
 import { site, trial } from '../../config/siteConfig';
-const CAPABILITY_TABS = [
-    {
-        id: 'plan',
-        label: 'Plan',
-        eyebrow: 'Sprint & project planning',
-        title: 'Plan sprints, iterations, and full project roadmaps',
-        description: 'Structure delivery the way your growing teams work: sprint planning boards, program increments, milestone roadmaps, and a live iteration view that keeps everyone aligned.',
-        bullets: [
-            'Sprint and program-increment planning configured once, reused everywhere',
-            'Backlog grooming with drag-and-drop story prioritization',
-            'Gantt-style roadmap timelines across multiple projects',
-            'Release planning and version management',
-        ],
-        icon: CalendarRange,
-        visual: IterationMock,
-    },
-    {
-        id: 'track',
-        label: 'Track',
-        eyebrow: 'Kanban & task tracking',
-        title: 'Every task and project on one living Kanban board',
-        description: 'Stories, tasks, bugs and sub-tasks live on a Kanban board with real workflow statuses. Drag work across columns, respect WIP limits and see status, priority and ownership at a glance.',
-        bullets: [
-            'Kanban board with drag-and-drop and WIP-aware columns',
-            'Work item types: story, task, bug, sub-task and initiative',
-            'Gantt chart and dependency management',
-            'Advanced search, filters, flagged tasks and bookmarks',
-        ],
-        icon: KanbanSquare,
-        visual: TaskBoardMock,
-    },
-    {
-        id: 'collaborate',
-        label: 'Collaborate',
-        eyebrow: 'Team collaboration',
-        title: 'Keep admins, PMs, leads and members in sync',
-        description: 'Decisions happen where the work lives. Comment on tasks, mention teammates, follow activity and let real-time notifications reach everyone who needs them — no more status meetings.',
-        bullets: [
-            'Comments, mentions, activity feed and real-time notifications',
-            'Team assignments with workload and capacity visibility',
-            'Personal work queues, flagged tasks and bookmarks per member',
-            'Single sign-on with Microsoft Entra ID, Google and Okta SAML',
-        ],
-        icon: Users,
-        visual: CollaborationMock,
-    },
-    {
-        id: 'report',
-        label: 'Report',
-        eyebrow: 'Analytics & reporting',
-        title: 'Actionable insights for stand-ups, steering and audits',
-        description: 'Dashboards for every role, project health signals, cross-project roadmaps and one-click PDF exports — so status reporting takes minutes instead of a morning.',
-        bullets: [
-            'Role dashboards for admins, PMs, leads and members',
-            'Sprint burndown, velocity charts, and project health signals',
-            'Cross-project roadmap and initiative progress tracking',
-            'Sprint, project, and release reports exported to PDF',
-        ],
-        icon: BarChart3,
-        visual: ReportingMock,
-    },
-];
+import a1Video from '../../assets/a1.mp4';
+import crossRoadmapVideo from '../../assets/cross-roadmap.mp4';
+import burndownVideo from '../../assets/burndown.mp4';
+import releaseManagementVideo from '../../assets/release-management.mp4';
 /** Core capabilities strip */
 const CAPABILITIES = [
     { label: 'Kanban Boards', icon: KanbanSquare },
@@ -77,18 +22,77 @@ const CAPABILITIES = [
     { label: 'Analytics & Reports', icon: BarChart3 },
     { label: 'Enterprise SSO', icon: ShieldCheck },
 ];
+
+/**
+ * Showcase Video Player Component for Delivery at a Glance
+ */
+const ShowcaseVideo = ({ src, title }) => {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  return (
+    <div className="relative rounded-xl overflow-hidden border border-[#e2e5ea] bg-slate-950 aspect-[16/9] group/video shadow-xs">
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-full h-full object-cover object-center"
+      />
+
+      {/* Play/Pause Control on Hover */}
+      <button
+        type="button"
+        onClick={togglePlay}
+        aria-label={isPlaying ? `Pause ${title} animation` : `Play ${title} animation`}
+        className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-lg bg-black/60 hover:bg-black/85 text-white flex items-center justify-center opacity-0 group-hover/video:opacity-100 transition-opacity backdrop-blur-xs border border-white/20 cursor-pointer"
+      >
+        {isPlaying ? (
+          <span className="w-2.5 h-2.5 flex items-center justify-between">
+            <span className="w-0.5 h-full bg-white rounded-full" />
+            <span className="w-0.5 h-full bg-white rounded-full" />
+          </span>
+        ) : (
+          <Play className="w-3 h-3 fill-current ml-0.5 text-white" />
+        )}
+      </button>
+    </div>
+  );
+};
+
 /** Delivery showcase items */
 const SHOWCASE = [
-    { title: 'Roadmap timelines', caption: 'Plan across projects', Visual: RoadmapMock },
-    { title: 'Sprint burndown', caption: 'Track the iteration', Visual: BurndownMock },
-    { title: 'Team capacity', caption: 'Balance the workload', Visual: CapacityMock },
-    { title: 'Release management', caption: 'Ship with confidence', Visual: ReleaseMock },
-];
-/** Benefits listed beside the animated workflow showcase. */
-const WORKFLOW_BENEFITS = [
-    { icon: GitBranch, title: 'Custom statuses and transitions', text: 'Add statuses and connect them in any order, per project.' },
-    { icon: Split, title: 'Conditional branches', text: 'Route work on outcomes such as Pass or Fail.' },
-    { icon: Repeat, title: 'Retry loops', text: 'Send failed work back to an earlier status for another pass.' },
+    {
+      title: 'Roadmap timelines',
+      caption: 'Plan across projects',
+      video: crossRoadmapVideo,
+      Visual: RoadmapMock,
+    },
+    {
+      title: 'Sprint burndown',
+      caption: 'Track the iteration',
+      video: burndownVideo,
+      Visual: BurndownMock,
+    },
+    {
+      title: 'Release management',
+      caption: 'Ship with confidence',
+      video: releaseManagementVideo,
+      Visual: ReleaseMock,
+    },
 ];
 /** Feature storytelling sections */
 const STORY_SECTIONS = [
@@ -104,7 +108,7 @@ const STORY_SECTIONS = [
             'Issue-type schemes, custom fields and required-field rules',
             'Automation rules for status changes and notifications',
         ],
-        Visual: WorkflowShowcase,
+        Visual: WorkflowMock,
         flip: false,
         bg: '',
     },
@@ -125,86 +129,343 @@ const STORY_SECTIONS = [
         bg: 'bg-[#f8fafc] border-y border-[#e2e5ea]',
     },
 ];
+const GLYPHS = '01#_%&<>[]XØ$*+-=~';
+
+/**
+ * Cybernetic Robotic Glitch Headline:
+ * Synchronized electric flicker, terminal character decrypt, and RGB chromatic aberration shift
+ * applied simultaneously to BOTH "Turn Deadlines into" and "Done-Lines."
+ */
+export const RoboticGlitchHeadline = () => {
+  const line1Target = 'Turn Deadlines into';
+  const line2Target = 'Done-Lines.';
+
+  const [line1Display, setLine1Display] = useState(line1Target);
+  const [line2Display, setLine2Display] = useState(line2Target);
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  const triggerGlitch = useCallback(() => {
+    setIsGlitching(true);
+    let iteration = 0;
+
+    const interval = setInterval(() => {
+      // Scramble Line 1
+      setLine1Display(
+        line1Target
+          .split('')
+          .map((char, index) => {
+            if (index < iteration * 2) {
+              return line1Target[index];
+            }
+            if (char === ' ') return ' ';
+            return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+          })
+          .join('')
+      );
+
+      // Scramble Line 2
+      setLine2Display(
+        line2Target
+          .split('')
+          .map((char, index) => {
+            if (index < iteration) {
+              return line2Target[index];
+            }
+            if (char === ' ' || char === '-') return char;
+            return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+          })
+          .join('')
+      );
+
+      if (iteration >= line2Target.length) {
+        clearInterval(interval);
+        setLine1Display(line1Target);
+        setLine2Display(line2Target);
+        setIsGlitching(false);
+      }
+      iteration += 1 / 4.2;
+    }, 70);
+  }, []);
+
+  useEffect(() => {
+    // Initial robotic glitch flicker on page load
+    const initialTimer = setTimeout(triggerGlitch, 500);
+
+    // Periodic slow electric glitch flicker burst every 7.5s
+    const intervalTimer = setInterval(triggerGlitch, 7500);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(intervalTimer);
+    };
+  }, [triggerGlitch]);
+
+  return (
+    <h1
+      onMouseEnter={triggerGlitch}
+      className="mt-5 font-display font-extrabold tracking-tight text-4xl sm:text-5xl lg:text-[62px] lg:leading-[1.1] max-w-4xl mx-auto animate-slide-up cursor-pointer select-none group"
+    >
+      {/* LINE 1: "Turn Deadlines into" with Robotic Electric Flicker & RGB Glitch */}
+      <span
+        className={`relative inline-block ${
+          isGlitching ? 'animate-cyber-flicker' : ''
+        }`}
+        data-text={line1Display}
+      >
+        {/* Main Solid White Text */}
+        <span className="relative z-10 text-white font-extrabold tracking-tight">
+          {line1Display}
+        </span>
+
+        {/* Cyan RGB Chromatic Shift */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 select-none pointer-events-none text-cyan-400 font-extrabold tracking-tight ${
+            isGlitching
+              ? 'opacity-85 animate-glitch-cyan'
+              : 'opacity-0 group-hover:opacity-40 transition-opacity'
+          }`}
+        >
+          {line1Display}
+        </span>
+
+        {/* Magenta RGB Chromatic Shift */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 select-none pointer-events-none text-pink-500 font-extrabold tracking-tight ${
+            isGlitching
+              ? 'opacity-75 animate-glitch-magenta'
+              : 'opacity-0 group-hover:opacity-35 transition-opacity'
+          }`}
+        >
+          {line1Display}
+        </span>
+      </span>
+
+      <br className="hidden sm:inline" />{' '}
+
+      {/* LINE 2: "Done-Lines." with Electric Gradient Flicker & Cyber Caret */}
+      <span
+        className={`relative inline-block mt-1 sm:mt-0 ${
+          isGlitching ? 'animate-cyber-flicker' : ''
+        }`}
+        data-text={line2Display}
+      >
+        {/* Main Gradient Text */}
+        <span
+          className="relative z-10 bg-clip-text text-transparent font-black tracking-tight"
+          style={{
+            backgroundImage: 'linear-gradient(90deg, #2dd4bf, #06b6d4, #38bdf8)',
+          }}
+        >
+          {line2Display}
+        </span>
+
+        {/* Line 2 Cyan RGB Ghost */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 select-none pointer-events-none text-cyan-400 font-black tracking-tight ${
+            isGlitching
+              ? 'opacity-90 animate-glitch-cyan'
+              : 'opacity-0 group-hover:opacity-60 transition-opacity'
+          }`}
+        >
+          {line2Display}
+        </span>
+
+        {/* Line 2 Magenta RGB Ghost */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 select-none pointer-events-none text-pink-500 font-black tracking-tight ${
+            isGlitching
+              ? 'opacity-80 animate-glitch-magenta'
+              : 'opacity-0 group-hover:opacity-50 transition-opacity'
+          }`}
+        >
+          {line2Display}
+        </span>
+      </span>
+    </h1>
+  );
+};
+
+/**
+ * Seamless Dual-Buffered Hero Video Loop
+ * Provides continuous, buttery smooth visuals with a gradual 1.2s cross-dissolve,
+ * eliminating all abrupt cuts, loop jumps, and blank frames.
+ */
+const SeamlessHeroVideo = ({ src }) => {
+  const videoRefA = useRef(null);
+  const videoRefB = useRef(null);
+  const [activePlayer, setActivePlayer] = useState('A');
+  const isTransitioningRef = useRef(false);
+
+  useEffect(() => {
+    const vA = videoRefA.current;
+    const vB = videoRefB.current;
+    if (!vA || !vB) return;
+
+    vA.currentTime = 0;
+    vA.play().catch(() => {});
+
+    const FADE_TIME = 1.2; // 1.2s gradual cinematic cross-fade
+
+    const checkA = () => {
+      if (!vA.duration) return;
+      if (vA.currentTime >= vA.duration - FADE_TIME && !isTransitioningRef.current) {
+        isTransitioningRef.current = true;
+        vB.currentTime = 0;
+        vB.play().then(() => {
+          setActivePlayer('B');
+          setTimeout(() => {
+            vA.pause();
+            vA.currentTime = 0;
+            isTransitioningRef.current = false;
+          }, FADE_TIME * 1000 + 100);
+        }).catch(() => {
+          isTransitioningRef.current = false;
+        });
+      }
+    };
+
+    const checkB = () => {
+      if (!vB.duration) return;
+      if (vB.currentTime >= vB.duration - FADE_TIME && !isTransitioningRef.current) {
+        isTransitioningRef.current = true;
+        vA.currentTime = 0;
+        vA.play().then(() => {
+          setActivePlayer('A');
+          setTimeout(() => {
+            vB.pause();
+            vB.currentTime = 0;
+            isTransitioningRef.current = false;
+          }, FADE_TIME * 1000 + 100);
+        }).catch(() => {
+          isTransitioningRef.current = false;
+        });
+      }
+    };
+
+    vA.addEventListener('timeupdate', checkA);
+    vB.addEventListener('timeupdate', checkB);
+
+    const onEndedA = () => {
+      vB.play().catch(() => {});
+      setActivePlayer('B');
+    };
+    const onEndedB = () => {
+      vA.play().catch(() => {});
+      setActivePlayer('A');
+    };
+
+    vA.addEventListener('ended', onEndedA);
+    vB.addEventListener('ended', onEndedB);
+
+    return () => {
+      vA.removeEventListener('timeupdate', checkA);
+      vB.removeEventListener('timeupdate', checkB);
+      vA.removeEventListener('ended', onEndedA);
+      vB.removeEventListener('ended', onEndedB);
+    };
+  }, [src]);
+
+  return (
+    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+      <video
+        ref={videoRefA}
+        src={src}
+        muted
+        playsInline
+        preload="auto"
+        className={`w-full h-full object-cover object-center mix-blend-screen transition-opacity duration-1000 ease-in-out absolute inset-0 ${
+          activePlayer === 'A' ? 'opacity-40 sm:opacity-45 z-10' : 'opacity-0 z-0'
+        }`}
+        style={{
+          transform: 'translate3d(0, 0, 0)',
+          imageRendering: '-webkit-optimize-contrast',
+        }}
+      />
+      <video
+        ref={videoRefB}
+        src={src}
+        muted
+        playsInline
+        preload="auto"
+        className={`w-full h-full object-cover object-center mix-blend-screen transition-opacity duration-1000 ease-in-out absolute inset-0 ${
+          activePlayer === 'B' ? 'opacity-40 sm:opacity-45 z-10' : 'opacity-0 z-0'
+        }`}
+        style={{
+          transform: 'translate3d(0, 0, 0)',
+          imageRendering: '-webkit-optimize-contrast',
+        }}
+      />
+    </div>
+  );
+};
+
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 export const HomePage = () => {
-    const [activeTab, setActiveTab] = useState(CAPABILITY_TABS[0].id);
-    const [workflowReplay, setWorkflowReplay] = useState(0);
-    const tabRefs = useRef({});
-    const focusTab = (id) => {
-        setActiveTab(id);
-        tabRefs.current[id]?.focus();
-    };
-    const handleTabKeyDown = (event) => {
-        const index = CAPABILITY_TABS.findIndex((tab) => tab.id === activeTab);
-        if (index < 0)
-            return;
-        let nextIndex = null;
-        if (event.key === 'ArrowRight')
-            nextIndex = (index + 1) % CAPABILITY_TABS.length;
-        else if (event.key === 'ArrowLeft')
-            nextIndex = (index - 1 + CAPABILITY_TABS.length) % CAPABILITY_TABS.length;
-        else if (event.key === 'Home')
-            nextIndex = 0;
-        else if (event.key === 'End')
-            nextIndex = CAPABILITY_TABS.length - 1;
-        if (nextIndex === null)
-            return;
-        event.preventDefault();
-        focusTab(CAPABILITY_TABS[nextIndex].id);
-    };
     return (<>
       {/* ============================================================ */}
-      {/* HERO SECTION                                                  */}
+      {/* HERO SECTION: Dedicated First Fold with Agile Video & Headline */}
       {/* ============================================================ */}
-      <section className="relative overflow-hidden bg-[#0a0f1e]">
+      <section className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center overflow-hidden bg-[#0a0f1e] pt-10 pb-8 sm:pt-14 sm:pb-10">
+        {/* Background Video Animation: a1.mp4 (Continuous Seamless Dual-Buffered Loop) */}
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
+          <SeamlessHeroVideo src={a1Video} />
+          {/* Ambient vignette & gradient overlays: balanced so video is softly faded as a sleek backdrop */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 85% 75% at 50% 45%, rgba(10, 15, 30, 0.58) 0%, rgba(10, 15, 30, 0.85) 72%, #0a0f1e 100%), linear-gradient(to bottom, rgba(10,15,30,0.5) 0%, transparent 40%, rgba(10,15,30,0.85) 85%, #0a0f1e 100%)',
+            }}
+          />
+        </div>
+
         {/* Deep navy → teal ambient gradient backdrop */}
-        <div aria-hidden="true" className="absolute inset-0" style={{
-            background: 'radial-gradient(ellipse 900px 500px at 50% -10%, rgba(13,148,136,0.32) 0%, transparent 60%), radial-gradient(ellipse 700px 440px at 90% 20%, rgba(6,182,212,0.18) 0%, transparent 58%), radial-gradient(ellipse 640px 400px at 5% 35%, rgba(245,158,11,0.11) 0%, transparent 58%)',
+        <div aria-hidden="true" className="absolute inset-0 z-0 pointer-events-none" style={{
+            background: 'radial-gradient(ellipse 900px 500px at 50% 10%, rgba(13,148,136,0.3) 0%, transparent 60%), radial-gradient(ellipse 700px 440px at 90% 20%, rgba(6,182,212,0.18) 0%, transparent 58%), radial-gradient(ellipse 640px 400px at 5% 35%, rgba(245,158,11,0.1) 0%, transparent 58%)',
         }}/>
         {/* Subtle grid */}
-        <div aria-hidden="true" className="absolute inset-0 opacity-[0.13]" style={{
+        <div aria-hidden="true" className="absolute inset-0 opacity-[0.13] z-0 pointer-events-none" style={{
             backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
             backgroundSize: '72px 72px',
-            maskImage: 'radial-gradient(ellipse 72% 65% at 50% 0%, #000 22%, transparent 80%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 72% 65% at 50% 0%, #000 22%, transparent 80%)',
+            maskImage: 'radial-gradient(ellipse 72% 65% at 50% 45%, #000 25%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 72% 65% at 50% 45%, #000 25%, transparent 80%)',
         }}/>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-48 sm:pb-56 text-center">
-          {/* Badge */}
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.14] text-[#5eead4] text-xs font-bold tracking-wide backdrop-blur-sm animate-fade-in">
-            <Zap className="w-3.5 h-3.5" aria-hidden="true"/>
-            {site.tagline}
-          </span>
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10 my-auto">
+          {/* Minimal & Apt Headline with Dual-Text Robotic Flicker & Glitch */}
+          <RoboticGlitchHeadline />
 
-          {/* Main headline — exact copy from brief */}
-          <h1 className="mt-7 font-display font-extrabold text-white tracking-tight text-4xl sm:text-5xl lg:text-[64px] lg:leading-[1.06] max-w-5xl mx-auto animate-slide-up">
-            {site.name} —{' '}
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(90deg, #2dd4bf, #06b6d4, #38bdf8)' }}>
-              Smart Project Management
-            </span>{' '}
-            Software for Growing Teams
-          </h1>
-
-          {/* Supporting copy — exact from brief */}
-          <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto animate-slide-up">
-            Track tasks, manage team workloads, and deliver projects on time with intuitive Kanban boards,
-            Gantt charts, and real-time sprint tracking.
+          {/* Clean, Neat & Crystal-Clear Subtitle (Zero Messy Boxes) */}
+          <p className="mt-5 text-base sm:text-lg lg:text-[19px] text-slate-200 font-medium leading-relaxed max-w-2xl mx-auto animate-slide-up drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+            Plan sprints, track iteration velocity, and deliver complex roadmaps on time. Intuitive Kanban boards, real-time burndown intelligence, and cross-team workflows in one fluid workspace.
           </p>
 
-          {/* CTAs */}
-          <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide-up">
-            <Link to="/register" id="hero-get-started" className="btn-lg w-full sm:w-auto group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2dd4bf] focus:ring-offset-2 focus:ring-offset-[#0a0f1e]" style={{
-            background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
-            boxShadow: '0 0 32px rgba(13,148,136,0.45), 0 4px 16px rgba(13,148,136,0.3)',
-        }}>
-              Get Started Free
+          {/* Sleek Minimal Buttons */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 animate-slide-up">
+            <Link
+              to="/register"
+              id="hero-get-started"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-200 shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
+              }}
+            >
+              <span>Get Started Free</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5"/>
             </Link>
-            <a href="#features" id="hero-explore" className="btn-lg w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-white/[0.09] border border-white/[0.18] hover:bg-white/[0.15] hover:border-white/[0.28] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2dd4bf] focus:ring-offset-2 focus:ring-offset-[#0a0f1e]">
-              <Play className="w-4 h-4 fill-current" aria-hidden="true"/>
-              Explore Features
+            <a
+              href="#product"
+              id="hero-explore"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base text-white bg-slate-900/80 border border-white/20 hover:bg-slate-800 hover:border-white/35 transition-all duration-200 backdrop-blur-md shadow-md"
+            >
+              <Play className="w-3.5 h-3.5 fill-current text-teal-400" aria-hidden="true"/>
+              <span>Explore Features</span>
             </a>
           </div>
 
@@ -217,41 +478,43 @@ export const HomePage = () => {
             </Link>
           </div>
 
-          <p className="mt-5 text-sm text-slate-400">
-            Already have an account?{' '}
-            <Link to="/login" className="text-[#5eead4] font-semibold hover:text-[#99f6e4] transition-colors">
+          {/* 7-Day Free Trial Notice - Elegant & High Legibility */}
+          <p className="mt-5 text-sm font-medium text-slate-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+            <span className="text-white font-semibold">Free 7-day trial</span> · No credit card required ·{' '}
+            <Link to="/login" className="text-teal-300 font-semibold hover:underline hover:text-teal-200 transition-colors">
               Log in
-            </Link>
-            {' · '}
-            <Link to="/pricing" className="text-[#5eead4] font-semibold hover:text-[#99f6e4] transition-colors">
-              View pricing
             </Link>
           </p>
         </div>
 
-        {/* ---- Hero product visual ---- */}
-        <div id="product" className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-36 sm:-mt-40 scroll-mt-20">
-          {/* glow ring behind the preview */}
-          <div aria-hidden="true" className="absolute -inset-x-4 top-8 bottom-8 rounded-[36px] blur-3xl" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.3), rgba(6,182,212,0.2), rgba(245,158,11,0.15))' }}/>
-          {/* Browser chrome wrapper */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] transition-transform duration-500 hover:-translate-y-1">
-            {/* Chrome bar */}
-            <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#1e293b] border-b border-white/[0.08]">
-              <span className="w-3 h-3 rounded-full bg-[#ef4444]/70"/>
-              <span className="w-3 h-3 rounded-full bg-[#f59e0b]/70"/>
-              <span className="w-3 h-3 rounded-full bg-[#10b981]/70"/>
-              <div className="flex-1 mx-4 h-5 rounded-md bg-white/[0.06] flex items-center justify-center">
-                <span className="text-[10px] text-slate-400 font-medium tracking-wide">app.flowexec.com</span>
-              </div>
-            </div>
-            <ProductPreview />
+        {/* Subtle Down Scroll Indicator to Product Overview */}
+        <div className="relative z-10 pt-4 pb-2 animate-bounce">
+          <a
+            href="#product"
+            aria-label="Scroll down to Product Overview"
+            className="inline-flex items-center justify-center text-slate-400 hover:text-teal-400 transition-colors p-2"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </a>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* PRODUCT OVERVIEW SECTION (Down below the Hero fold)          */}
+      {/* ============================================================ */}
+      <section id="product" className="relative scroll-mt-16 py-14 sm:py-20 bg-[#0a0f1e] border-t border-slate-800/80">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Subtle glow ring behind showcase */}
+          <div aria-hidden="true" className="absolute -inset-x-4 top-8 bottom-8 rounded-[36px] blur-3xl opacity-60 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.25), rgba(6,182,212,0.18), rgba(245,158,11,0.12))' }}/>
+          
+          <div className="relative rounded-3xl border border-white/20 bg-white/95 backdrop-blur-xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.45)] p-4 sm:p-6">
+            <ClickUpProductShowcase />
           </div>
+
           <p className="mt-4 text-center text-xs text-slate-400">
-            Live project workspace rendered with real {site.name} components — the Kanban board, analytics
-            and progress shown here are the product itself.
+            Interactive Limber Lithe Member Portal showcase — explore Dashboard, Projects, Tasks, Sprint Iterations, and Work Queue in real-time.
           </p>
         </div>
-        <div className="h-20 sm:h-24" aria-hidden="true"/>
       </section>
 
       {/* ============================================================ */}
@@ -267,152 +530,60 @@ export const HomePage = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* PRODUCT CAPABILITIES TABS                                    */}
+      {/* PRODUCT CAPABILITIES — HORIZONTAL SCROLL ZIGZAG              */}
       {/* ============================================================ */}
-      <section id="features" className="scroll-mt-20 py-20 sm:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section header */}
-          <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0d9488]">
-              <Target className="w-3.5 h-3.5" aria-hidden="true"/>
-              Product capabilities
-            </span>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold tracking-tight text-[#0a0f1e]">
-              Everything {site.name} ships with today
-            </h2>
-            <p className="mt-4 text-[#4b5563] leading-relaxed">
-              Four powerful workflows — all available in the product. Explore them in your workspace after you sign up.
-            </p>
-          </div>
-
-          {/* Tab list */}
-          <div role="tablist" aria-label="Product capabilities" className="mt-10 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-[#e2e5ea] bg-[#f8fafc] p-2 w-fit mx-auto">
-            {CAPABILITY_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const selected = tab.id === activeTab;
-            return (<button key={tab.id} ref={(node) => { tabRefs.current[tab.id] = node; }} type="button" role="tab" id={`capability-tab-${tab.id}`} aria-selected={selected} aria-controls={`capability-panel-${tab.id}`} tabIndex={selected ? 0 : -1} onClick={() => setActiveTab(tab.id)} onKeyDown={handleTabKeyDown} className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0d9488]/40 ${selected
-                    ? 'bg-white text-[#0f766e] shadow-fe-md border border-[#e2e5ea]'
-                    : 'text-[#4b5563] hover:text-[#0f766e] hover:bg-white/70'}`}>
-                  <Icon className={`w-4 h-4 ${selected ? 'text-[#0d9488]' : 'text-[#9ca3af]'}`} aria-hidden="true"/>
-                  {tab.label}
-                </button>);
-        })}
-          </div>
-
-          {/* Tab panels */}
-          <div className="mt-14">
-            {CAPABILITY_TABS.map((tab) => {
-            const Visual = tab.visual;
-            return (<div key={tab.id} role="tabpanel" id={`capability-panel-${tab.id}`} aria-labelledby={`capability-tab-${tab.id}`} hidden={tab.id !== activeTab} tabIndex={0} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center focus:outline-none">
-                  {/* Text side */}
-                  <div>
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#f0fdfa] border border-[#99f6e4] text-[#0f766e] text-xs font-bold uppercase tracking-wider">
-                      <tab.icon className="w-4 h-4" aria-hidden="true"/>
-                      {tab.eyebrow}
-                    </div>
-                    <h3 className="mt-5 font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0a0f1e] leading-tight">
-                      {tab.title}
-                    </h3>
-                    <p className="mt-4 text-[#4b5563] leading-relaxed">{tab.description}</p>
-                    <ul className="mt-6 space-y-3">
-                      {tab.bullets.map((bullet) => (<li key={bullet} className="flex items-start gap-3 text-sm text-[#1a1d23]">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-[#0d9488] flex-shrink-0 mt-0.5" aria-hidden="true"/>
-                          <span>{bullet}</span>
-                        </li>))}
-                    </ul>
-                    <div className="mt-7">
-                      <Link to="/register" className="inline-flex items-center gap-2 text-sm font-bold text-[#0d9488] hover:text-[#0f766e] group transition-colors">
-                        Try it free
-                        <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5"/>
-                      </Link>
-                    </div>
-                  </div>
-                  {/* Visual side */}
-                  <div>
-                    <Visual />
-                  </div>
-                </div>);
-        })}
-          </div>
-        </div>
-      </section>
+      <div id="product-capabilities" className="scroll-mt-16" />
+      <ProductCapabilitiesHorizontalZigzag />
 
       {/* ============================================================ */}
-      {/* DELIVERY SHOWCASE — 2×2 GRID                                 */}
+      {/* ROADMAP AND DELIVERY — INTERACTIVE FEATURE DECK               */}
       {/* ============================================================ */}
-      <section id="showcase" className="scroll-mt-20 py-20 sm:py-24 bg-[#f8fafc] border-y border-[#e2e5ea]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto text-center mb-14">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0d9488]">
-              <TrendingUp className="w-3.5 h-3.5" aria-hidden="true"/>
-              Delivery at a glance
-            </span>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold tracking-tight text-[#0a0f1e]">
-              From roadmap to release, all in one timeline
-            </h2>
-            <p className="mt-4 text-[#4b5563] leading-relaxed">
-              Roadmaps, burndown, capacity and releases are rendered from the same work items —
-              no exports, no spreadsheets, no status-chasing.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-            {SHOWCASE.map(({ title, caption, Visual }) => (<div key={title} className="group rounded-2xl border border-[#e2e5ea] bg-white p-5 shadow-fe-sm hover:shadow-fe-lg hover:-translate-y-0.5 transition-all duration-200">
-                <div className="mb-4 flex items-baseline justify-between gap-3">
-                  <h3 className="text-sm font-bold text-[#0a0f1e]">{title}</h3>
-                  <span className="text-xs font-semibold text-[#9ca3af]">{caption}</span>
-                </div>
-                <Visual />
-              </div>))}
-          </div>
-        </div>
-      </section>
+      <div id="showcase" className="scroll-mt-16" />
+      <RoadmapDeliverySection />
 
       {/* ============================================================ */}
       {/* WORKFLOW CUSTOMIZATION                                        */}
       {/* ============================================================ */}
-      <section id="workflow" className="scroll-mt-20 py-20 sm:py-24 bg-white">
-        {/* Copy on the left, compact animated workflow card on the right (stacked below xl so the multi-level graph keeps readable labels). */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 xl:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] gap-10 xl:gap-14 items-center">
-          <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f0fdfa] border border-[#99f6e4] text-[#0f766e] text-[11px] font-bold uppercase tracking-wider">
-              <Workflow className="w-3.5 h-3.5" aria-hidden="true"/>
-              Workflow automation
+      <section id="workflow" className="scroll-mt-20 py-20 sm:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#f0fdfa] border border-[#99f6e4] text-[#0f766e] text-xs font-bold uppercase tracking-wider">
+              <Workflow className="w-4 h-4" aria-hidden="true"/>
+              Workflow customization
             </div>
-            <h2 className="mt-4 font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0a0f1e] leading-tight">
-              Build workflows{' '}
+            <h2 className="mt-5 font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0a0f1e] leading-tight">
+              Your workflow,{' '}
               <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #0d9488, #06b6d4)' }}>
-                your way
+                your rules
               </span>
             </h2>
-            <p className="mt-3 text-[15px] text-[#4b5563] leading-relaxed">
-              Design the statuses, transitions, conditional branches and retry loops your team actually
-              follows, then watch work move through them. No code and no rigid templates.
+            <p className="mt-4 text-[#4b5563] leading-relaxed">
+              Configure the statuses, WIP limits and required fields each project needs. Keep lightweight
+              teams light, and give governance-heavy teams the controls they expect.
             </p>
-            <ul className="mt-6 space-y-4">
-              {WORKFLOW_BENEFITS.map(({ icon: Icon, title, text }) => (<li key={title} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[#ccfbf1] bg-[#f0fdfa] text-[#0d9488]">
-                    <Icon className="w-4 h-4" aria-hidden="true"/>
-                  </span>
-                  <span>
-                    <span className="block text-sm font-semibold text-[#0f172a]">{title}</span>
-                    <span className="block text-sm text-[#64748b]">{text}</span>
-                  </span>
+            <ul className="mt-6 space-y-3">
+              {[
+            'Custom workflow statuses and transitions per project',
+            'Work-in-progress limits that surface bottlenecks early',
+            'Issue-type schemes, custom fields and required-field rules',
+            'Automation rules for status changes, releases and notifications',
+        ].map((bullet) => (<li key={bullet} className="flex items-start gap-3 text-sm text-[#1a1d23]">
+                  <CheckCircle2 className="w-4.5 h-4.5 text-[#0d9488] flex-shrink-0 mt-0.5" aria-hidden="true"/>
+                  <span>{bullet}</span>
                 </li>))}
             </ul>
-            <div className="mt-7 flex flex-wrap gap-2.5">
+            <div className="mt-8 flex flex-wrap gap-2.5">
               <Link to="/register" className="btn-primary">
                 Start building
                 <ArrowRight className="w-4 h-4"/>
               </Link>
-              <button type="button" onClick={() => setWorkflowReplay((n) => n + 1)} className="btn-secondary">
-                <Play className="w-4 h-4" aria-hidden="true"/>
-                See how it works
-              </button>
+              <Link to="/pricing" className="btn-secondary">
+                View pricing
+              </Link>
             </div>
           </div>
           <div className="w-full max-w-[720px] xl:ml-auto">
-            <WorkflowShowcase replaySignal={workflowReplay}/>
+            <WorkflowShowcase />
           </div>
         </div>
       </section>
@@ -460,59 +631,6 @@ export const HomePage = () => {
       {/* PRICING CALCULATOR                                           */}
       {/* ============================================================ */}
       <MemberPricingSection id="pricing" heading="Pay only for the members you add"/>
-
-      {/* ============================================================ */}
-      {/* FINAL CTA                                                     */}
-      {/* ============================================================ */}
-      <section className="py-20 sm:py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl px-8 sm:px-14 py-14 sm:py-16 text-center text-white" style={{
-            background: 'linear-gradient(145deg, #0a0f1e 0%, #0f1a30 55%, #0a1628 100%)',
-            boxShadow: '0 30px 60px -12px rgba(0,0,0,0.4)',
-        }}>
-            {/* Glow orbs */}
-            <div aria-hidden="true" className="absolute inset-0" style={{
-            background: 'radial-gradient(640px 320px at 50% -20%, rgba(13,148,136,0.38) 0%, transparent 65%), radial-gradient(520px 280px at 100% 120%, rgba(245,158,11,0.2) 0%, transparent 60%), radial-gradient(400px 240px at 0% 120%, rgba(6,182,212,0.15) 0%, transparent 60%)',
-        }}/>
-            {/* Grid overlay */}
-            <div aria-hidden="true" className="absolute inset-0 opacity-[0.07]" style={{
-            backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-        }}/>
-            <div className="relative">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.09] border border-white/20 text-[#5eead4] text-xs font-bold tracking-wide mb-6">
-                <Zap className="w-3.5 h-3.5" aria-hidden="true"/>
-                Start in minutes
-              </span>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
-                Ready to run your projects on{' '}
-                <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(90deg, #2dd4bf, #38bdf8)' }}>
-                  {site.name}?
-                </span>
-              </h2>
-              <p className="mt-5 text-slate-300 max-w-xl mx-auto text-lg leading-relaxed">
-                Create your account and start planning your first sprint in minutes.
-                No payment details required.
-              </p>
-              <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link to="/register" id="cta-get-started" className="btn-lg w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2dd4bf] focus:ring-offset-2 focus:ring-offset-[#0a0f1e]" style={{
-            background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
-            boxShadow: '0 0 28px rgba(13,148,136,0.5)',
-        }}>
-                  Get Started Free
-                  <ArrowRight className="w-4 h-4"/>
-                </Link>
-                <Link to="/pricing" className="btn-lg w-full sm:w-auto text-white bg-white/[0.09] border border-white/[0.22] hover:bg-white/[0.16] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0a0f1e]">
-                  View pricing
-                </Link>
-              </div>
-              <p className="mt-5 text-sm text-slate-400">
-                No credit card required · Cancel anytime
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </>);
 };
 export default HomePage;
