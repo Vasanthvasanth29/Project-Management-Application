@@ -18,13 +18,12 @@ const renderStatus = (now) => renderToStaticMarkup(h(MemoryRouter, {
     children: h(TrialStatus, { status: getTrialStatus(START, now), notStartedAction: null }),
 }));
 describe('homepage trial entry point', () => {
-    it('keeps both "Get Started Free" buttons pointing at /register', () => {
-        const html = renderAt('/');
-        for (const id of ['hero-get-started', 'cta-get-started']) {
-            const tag = anchorById(html, id);
-            expect(tag).toContain('href="/register"');
-            expect(tag).toContain('Get Started Free');
-        }
+    it('keeps the hero "Get Started Free" button pointing at /register', () => {
+        // The redesigned landing page has a single hero sign-up button (the
+        // old closing "cta-get-started" banner no longer exists).
+        const tag = anchorById(renderAt('/'), 'hero-get-started');
+        expect(tag).toContain('href="/register"');
+        expect(tag).toContain('Get Started Free');
     });
     it('adds a separate "Start 7-Day Limited Trial" link to /trial', () => {
         const tag = anchorById(renderAt('/'), 'home-start-limited-trial');

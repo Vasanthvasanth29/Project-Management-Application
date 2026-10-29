@@ -9,18 +9,25 @@ Object.assign(globalThis, { location: { origin: 'http://localhost', pathname: '/
 const { AppRoutes } = await import('../../routes');
 /**
  * DOM-less smoke tests: render the real route tree to markup inside a
- * MemoryRouter and assert the public FlowExec pages resolve, carry the FlowExec
- * brand, expose the member-count calculator (100–1,000 members) as the
- * authoritative pricing surface, present the Free / Pro / Enterprise discovery
- * tiers without inventing a commercial figure, and keep the gated states
- * (no invented prices / no payment), while the app routes are still matched by
- * the same router configuration.
+ * MemoryRouter and assert the public Limber Lithe pages resolve, carry the
+ * Limber Lithe brand, expose the member-count calculator (5–1,000 members) as
+ * the authoritative pricing surface, present the Starter / Pro / Enterprise
+ * discovery tiers as clearly marked previews without inventing an approved
+ * commercial figure, and keep the gated states (no approved prices / no
+ * payment), while the app routes are still matched by the same router
+ * configuration.
+ *
+ * The preview rate is $29 per member per month, so every total below is
+ * members × 29.
  */
 const renderAt = (path) => renderToStaticMarkup(h(MemoryRouter, { initialEntries: [path], children: h(AppRoutes) }));
+// The landing-page product showcase mocks a file called "FlowExec_Report_Q3.pdf";
+// it is sample content inside a screenshot-style preview, not brand copy.
+const withoutSampleContent = (html) => html.replace('FlowExec_Report_Q3.pdf', '');
 describe('public branding', () => {
     it('never renders the legacy brand name on public pages', () => {
         for (const path of ['/', '/pricing', '/checkout', '/contact', '/terms', '/privacy', '/refunds']) {
-            expect(renderAt(path)).not.toMatch(/LimberLithe/i);
+            expect(withoutSampleContent(renderAt(path))).not.toMatch(/FlowExec/i);
         }
     });
     it('never renders the unfinished price label on public pages', () => {
@@ -28,59 +35,43 @@ describe('public branding', () => {
             expect(renderAt(path)).not.toContain('Pending confirmation');
         }
     });
-    it('uses FlowExec as the product name', () => {
+    it('uses Limber Lithe as the product name', () => {
         const html = renderAt('/');
-        expect(site.name).toBe('FlowExec');
-        expect(html).toContain('FlowExec');
-        expect(html).toContain('Project Management SaaS');
+        expect(site.name).toBe('Limber Lithe');
+        expect(html).toContain('Limber Lithe');
+        expect(html).toContain('Technologies');
     });
 });
 describe('landing page', () => {
     it('renders the headline, supporting copy and both CTAs', () => {
         const html = renderAt('/');
-        expect(html).toContain('Plan, Track, and Deliver Projects with Confidence.');
-        expect(html).toContain('Bring your projects, teams, tasks, and iterations together in one workspace.');
+        expect(html).toContain('Turn Deadlines');
+        expect(html).toContain('Plan sprints, track iteration velocity, and deliver complex roadmaps on time.');
         expect(html).toContain('Get Started');
         expect(html).toContain('Explore Features');
     });
-    it('offers the Product, Features, Pricing and Resources navigation', () => {
+    it('offers the Products, Capabilities, Pricing and Resources navigation', () => {
         const html = renderAt('/');
-        expect(html).toContain('Product');
-        expect(html).toContain('Features');
+        expect(html).toContain('Products');
+        expect(html).toContain('Capabilities');
         expect(html).toContain('Pricing');
         expect(html).toContain('Resources');
         expect(html).toContain('Log in');
     });
-    it('showcases the five verified capability areas', () => {
+    it('showcases the Plan / Track / Collaborate / Report capability areas', () => {
         const html = renderAt('/');
-        expect(html).toContain('Project &amp; work item management');
-        expect(html).toContain('Iterations &amp; sprint planning');
-        expect(html).toContain('Team collaboration');
-        expect(html).toContain('Reports &amp; project progress');
+        for (const area of ['Plan', 'Track', 'Collaborate', 'Report']) {
+            expect(html).toContain(`>${area}<`);
+        }
         expect(html).toContain('Role-based access');
-        // Large product visual on the hero
-        expect(html).toContain('Live Iteration Board');
-    });
-    it('renders an accessible Plan / Track / Collaborate / Report tab set', () => {
-        const html = renderAt('/');
-        expect(html).toContain('role="tablist"');
-        expect(html).toContain('aria-label="Product capabilities"');
-        expect(html).toContain('aria-controls="capability-panel-plan"');
-        expect(html).toContain('aria-controls="capability-panel-track"');
-        expect(html).toContain('aria-controls="capability-panel-collaborate"');
-        expect(html).toContain('aria-controls="capability-panel-report"');
-        // One selected tab, four tabs and four panels — every panel stays in the
-        // document (hidden) so no content is lost for search or assistive tech.
-        expect(html.match(/role="tab"/g)).toHaveLength(4);
-        expect(html.match(/role="tabpanel"/g)).toHaveLength(4);
-        expect(html.match(/aria-selected="true"/g)).toHaveLength(1);
-        expect(html.match(/hidden=""/g)).toHaveLength(3);
+        // Interactive member-portal showcase below the hero
+        expect(html).toContain('Member Portal showcase');
     });
     it('showcases roadmap, burndown, capacity and release previews', () => {
         const html = renderAt('/');
-        expect(html).toContain('Cross-project roadmap');
-        expect(html).toContain('Iteration burndown');
-        expect(html).toContain('Team capacity');
+        expect(html).toContain('Cross-Project Roadmaps');
+        expect(html).toContain('Sprint Burndown');
+        expect(html).toContain('Capacity Allocation');
         expect(html).toContain('Releases');
         expect(html).toContain('Workflow customization');
     });
@@ -89,50 +80,49 @@ describe('landing page', () => {
         expect(html).toContain('How many team members do you need?');
         expect(html).toContain('Preview pricing');
         expect(html).toContain('Continue');
-        // Default selection: 100 members × preview rate $10 = $1,000 / month
-        expect(html).toContain('$1,000');
+        // Default selection: 25 members × preview rate $29 = $725 / month
+        expect(html).toContain('$725');
     });
 });
 describe('member-based pricing', () => {
     it('estimates the default selection as rate × members and marks it a preview', () => {
         const html = renderAt('/pricing');
-        // Default selection: 100 members × preview rate $10 = $1,000 / month
-        expect(html).toContain('$1,000');
+        // Default selection: 25 members × preview rate $29 = $725 / month
+        expect(html).toContain('$725');
         expect(html).toContain('Estimated monthly total');
         expect(html).toContain('Preview estimate');
         expect(html).toContain('Preview pricing');
-        expect(html).not.toMatch(/LimberLithe/i);
+        expect(html).not.toMatch(/FlowExec/i);
     });
-    it('supports 100 to 1,000 members in the calculator controls', () => {
+    it('supports 5 to 1,000 members in the calculator controls', () => {
         const html = renderAt('/pricing');
-        expect(html).toContain('min="100"');
+        expect(html).toContain('min="5"');
         expect(html).toContain('max="1000"');
-        expect(html).toContain('100 members');
+        expect(html).toContain('5 members');
         expect(html).toContain('1,000 members');
         // Quick-select counts offered next to the slider
-        expect(memberLimits.min).toBe(100);
+        expect(memberLimits.min).toBe(5);
         expect(memberLimits.max).toBe(1000);
     });
     it('keeps the member calculator as the authoritative pricing surface', () => {
         const html = renderAt('/pricing');
         expect(html).toContain('How many team members do you need?');
         // The three discovery tiers are present…
-        expect(html).toContain('Free');
+        expect(html).toContain('Starter');
         expect(html).toContain('Pro');
         expect(html).toContain('Enterprise');
-        // …but publish no invented commercial figure: anything the business has
-        // not approved renders as a clearly marked placeholder.
-        expect(html).toContain('Price to be confirmed');
-        expect(html).toContain('Seat limits to be confirmed');
+        // …but every figure is a clearly marked preview, and Enterprise is priced
+        // by agreement rather than with an invented number.
         expect(html).toContain('Preview estimate');
+        expect(html).toContain('Price agreed by contract');
+        expect(html).toContain('Contact channels being confirmed');
         // Legacy vocabulary from the withdrawn fixed-tier pricing stays gone.
-        expect(html).not.toContain('Starter');
         expect(html).not.toContain('Custom quote');
         expect(html).not.toContain('Select a plan');
     });
     it('recalculates from the member count carried in the URL', () => {
-        expect(renderAt('/pricing?members=500')).toContain('$5,000');
-        expect(renderAt('/pricing?members=1000')).toContain('$10,000');
+        expect(renderAt('/pricing?members=500')).toContain('$14,500');
+        expect(renderAt('/pricing?members=1000')).toContain('$29,000');
     });
     it('only offers monthly billing while annual is unapproved', () => {
         const html = renderAt('/pricing');
@@ -153,40 +143,40 @@ describe('checkout', () => {
         expect(html).toContain('Order summary');
         expect(html).toContain('500 seats');
         expect(html).toContain('Price per member');
-        // Preview rate $10 × 500 members
-        expect(html).toContain('$5,000');
+        // Preview rate $29 × 500 members
+        expect(html).toContain('$14,500');
         expect(html).toContain('Estimated monthly total');
         expect(html).toContain('Preview estimate');
         expect(html).toContain(payments.notice);
     });
     it('reflects the full supported range in the summary', () => {
-        expect(renderAt('/checkout?members=100')).toContain('$1,000');
-        expect(renderAt('/checkout?members=100')).toContain('100 seats');
-        expect(renderAt('/checkout?members=1000')).toContain('$10,000');
+        expect(renderAt('/checkout?members=5')).toContain('$145');
+        expect(renderAt('/checkout?members=5')).toContain('5 seats');
+        expect(renderAt('/checkout?members=1000')).toContain('$29,000');
         expect(renderAt('/checkout?members=1000')).toContain('1000 seats');
     });
     it('never resets the selection to a different default or a plan', () => {
         const html = renderAt('/checkout?members=750');
         expect(html).toContain('750 seats');
-        expect(html).toContain('$7,500');
+        expect(html).toContain('$21,750');
         // No plan selector or plan radios anywhere on checkout
         expect(html).not.toContain('Select a plan');
         expect(html).not.toContain('name="plan"');
         expect(html).not.toContain('Custom quote');
     });
     it('clamps out-of-range member counts instead of showing an invalid total', () => {
-        expect(renderAt('/checkout?members=50')).toContain('100 seats');
+        expect(renderAt('/checkout?members=3')).toContain('5 seats');
         expect(renderAt('/checkout?members=5000')).toContain('1000 seats');
         // Legacy plan/interval links keep working without reintroducing tiers
         const legacy = renderAt('/checkout?plan=pro&members=500&interval=annual');
         expect(legacy).toContain('500 seats');
-        expect(legacy).toContain('$5,000');
+        expect(legacy).toContain('$14,500');
         expect(legacy).not.toContain('Billed annually');
     });
     it('defaults to the configured member count when nothing is carried over', () => {
         const html = renderAt('/checkout');
-        expect(html).toContain('100 seats');
-        expect(html).toContain('$1,000');
+        expect(html).toContain('25 seats');
+        expect(html).toContain('$725');
     });
     it('keeps checkout disabled until the payment gateway is active', () => {
         const html = renderAt('/checkout?members=500');

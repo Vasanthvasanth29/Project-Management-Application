@@ -31,3 +31,8 @@ g.localStorage = new MemoryStorage();
 // `typeof window === 'undefined'` guards flip to the browser path; `window`
 // points at globalThis so `window.localStorage` resolves to the same store.
 g.window = g;
+// Libraries that treat `window` as a real browser (framer-motion's projection
+// layer registers a resize listener while server-rendering) need these to exist.
+// They are inert here: nothing in the node test environment fires DOM events.
+g.addEventListener = g.addEventListener ?? (() => { });
+g.removeEventListener = g.removeEventListener ?? (() => { });
