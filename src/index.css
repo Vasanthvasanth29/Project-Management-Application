@@ -41,6 +41,9 @@
     --fe-accent: #f59e0b;
     --fe-accent-hover: #d97706;
     --fe-accent-light: #fef3c7;
+
+    /* Work Item Details — unified light-black text color */
+    --work-item-text: #343A40;
     --fe-accent-container: #fde68a;
 
     --fe-danger: #ef4444;
@@ -243,6 +246,14 @@
     @apply badge bg-[#ffedd5] text-[#c2410c] border border-[#fed7aa];
   }
 
+  /* Denser status badge when it sits inside the compact left-list iteration
+     cards — card-scoped so every other badge across the app is untouched. */
+  [data-sprint-card] .badge-teal,
+  [data-sprint-card] .badge-gray,
+  [data-sprint-card] .badge-green {
+    @apply px-1.5 py-0.5 text-[10px] leading-tight gap-1;
+  }
+
   /* ===== Page Layout ===== */
   .page-header {
     @apply mb-6;
@@ -259,6 +270,29 @@
   /* ===== Section ===== */
   .section-title {
     @apply text-sm font-bold text-[#1a1d23] mb-3.5 tracking-tight uppercase;
+  }
+
+  /* ===== Work Item Details — shared typography =====
+     One light-black / dark-gray text system for every Work Item Details
+     section (Information, People, Dates, Description, Related Work,
+     Activity). All sizes are ~20% smaller than the base scale and every
+     non-link text color is unified on --work-item-text #343A40.
+       labels 11.2px regular · values/controls 11.2px medium · headings
+       12.8px semibold · metadata 10.4px regular · links keep #0052cc */
+  .fe-label {
+    @apply text-[11.2px] leading-4 font-normal text-[color:var(--work-item-text)];
+  }
+  .fe-value {
+    @apply text-[11.2px] leading-4 font-medium text-[color:var(--work-item-text)];
+  }
+  .fe-heading {
+    @apply text-[12.8px] leading-5 font-semibold text-[color:var(--work-item-text)];
+  }
+  .fe-meta {
+    @apply text-[10.4px] leading-4 text-[color:var(--work-item-text)];
+  }
+  .fe-control {
+    @apply text-[11.2px] leading-4 font-medium text-[color:var(--work-item-text)];
   }
 
   /* ===== Scrollbar ===== */
