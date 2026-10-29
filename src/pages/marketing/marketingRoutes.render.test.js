@@ -219,6 +219,6 @@ describe('protected routes are preserved', () => {
     });
     it('still serves the login page at /login', () => {
         const html = renderAt('/login');
-        expect(html).toContain('Back to FlowExec');
+        expect(html).toContain('Back to Limber Lithe');
     });
 });

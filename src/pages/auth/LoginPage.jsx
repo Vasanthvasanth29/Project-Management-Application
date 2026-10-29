@@ -31,7 +31,7 @@ export const LoginPage = () => {
         setLocalError(null);
         const result = await login({ email, password });
         if (result.success && result.role) {
-            toast.success('Welcome back to FlowExec!');
+            toast.success('Welcome back to Limber Lithe!');
             navigate(getDashboardPath(result.role));
         }
     };
@@ -55,14 +55,14 @@ export const LoginPage = () => {
             <Layers className="w-5 h-5 text-white"/>
           </div>
           <span className="text-lg font-bold text-[#1a1d23] tracking-tight font-display">
-            FlowExec <span className="text-[#0d9488] font-normal">Platform</span>
+            Limber Lithe <span className="text-[#0d9488] font-normal">Platform</span>
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="hidden sm:block text-xs font-medium text-[#9ca3af]">Cloud Partner Verified</div>
           <Link to="/" className="text-xs font-semibold text-[#0d9488] hover:text-[#0f766e] transition-colors">
-            ← Back to FlowExec
+            ← Back to Limber Lithe
           </Link>
         </div>
       </div>
@@ -102,7 +102,7 @@ export const LoginPage = () => {
           </div>
 
           <div className="mt-8 pt-6 border-t border-white/10 text-[11px] text-slate-500">
-            FlowExec Enterprise · Single Sign-On Enabled
+            Limber Lithe Enterprise · Single Sign-On Enabled
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export const LoginPage = () => {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-[#1a1d23] font-display">Sign In</h2>
-              <p className="text-xs text-[#4b5563] mt-1">to continue to FlowExec Platform</p>
+              <p className="text-xs text-[#4b5563] mt-1">to continue to Limber Lithe Platform</p>
             </div>
 
             {/* Enterprise SSO Action Buttons */}
@@ -254,7 +254,7 @@ export const LoginPage = () => {
           <Link to="/privacy" className="hover:underline">Privacy</Link>
           <Link to="/terms" className="hover:underline">Terms</Link>
         </div>
-        <div>FlowExec Enterprise Edition 2026</div>
+        <div>Limber Lithe Enterprise Edition 2026</div>
       </div>
 
       {/* Interactive Enterprise SSO Modal */}
