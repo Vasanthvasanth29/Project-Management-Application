@@ -1,8 +1,8 @@
 export const BOARD_COLUMNS = ['TODO', 'IN_PROGRESS', 'DONE'];
 export const columnLabel = {
-    TODO: 'TO DO',
-    IN_PROGRESS: 'IN PROGRESS',
-    DONE: 'DONE',
+    TODO: 'To Do',
+    IN_PROGRESS: 'In Progress',
+    DONE: 'Done',
 };
 // Any status outside TODO/DONE (IN_REVIEW, TESTING, BUG_FIX, RETEST, BLOCKED…)
 // belongs to the middle column. Cancelled is a terminal outcome: it sits in the

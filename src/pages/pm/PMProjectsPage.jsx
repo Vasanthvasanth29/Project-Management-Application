@@ -12,7 +12,7 @@ import { EditProjectModal } from '../admin/EditProjectModal';
 import { FolderKanban } from 'lucide-react';
 import { formatDate, isOverdue } from '../../utils/dateUtils';
 import { getProjectUrl, getProjectPiUrl } from '../../utils/idUtils';
-import { canCreateProjects, canManageProjectSettings, canArchiveProjects } from '../../utils/roleUtils';
+import { canCreateProjects, canManageProjectSettings, canArchiveProjects, getProjectStatusLabel } from '../../utils/roleUtils';
 const STATUS_FILTERS = [
     { value: 'ALL', label: 'All' },
     { value: 'ACTIVE', label: 'Active' },
@@ -198,7 +198,7 @@ export const PMProjectsPage = () => {
                       {isProjectOverdue && (<span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
                           <AlertTriangle className="w-3 h-3"/> Overdue
                         </span>)}
-                      <span className={`badge text-[10px] ${statusBadgeClass(project.status)}`}>{project.status.replace('_', ' ')}</span>
+                      <span className={`badge text-[10px] ${statusBadgeClass(project.status)}`}>{getProjectStatusLabel(project.status)}</span>
                       {(canEdit || canArchive) && (<div className="relative" ref={menuFor === project.id ? menuRef : undefined}>
                           <button type="button" title="Project actions" aria-label="Project actions" onClick={(e) => {
                             e.stopPropagation();

@@ -21,7 +21,7 @@ export const StatCard = ({ title, value, icon: Icon, iconColor = '#0d9488', icon
     };
     return (<div className={`stat-card ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#9ca3af]">{title}</span>
+        <span className="text-xs font-bold tracking-wider text-[#9ca3af]">{title}</span>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: iconBg }}>
           <Icon className="w-5 h-5" style={{ color: iconColor }}/>
         </div>
@@ -37,7 +37,7 @@ export const StatCard = ({ title, value, icon: Icon, iconColor = '#0d9488', icon
             {getTrendIcon()}
             <span>{Math.abs(trend)}%</span>
           </span>
-          <span className="text-xs text-[#9ca3af] truncate">{trendLabel || 'vs previous period'}</span>
+          <span className="text-xs text-[#9ca3af] truncate">{trendLabel || 'Vs Previous Period'}</span>
         </div>)}
     </div>);
 };

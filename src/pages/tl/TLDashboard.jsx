@@ -10,6 +10,7 @@ import { ProgressBar } from '../../components/common/ProgressBar';
 import { getDueDateLabel, getDueDateClass, isOverdue, isDueToday, formatShortDate } from '../../utils/dateUtils';
 import { getProjectUrl } from '../../utils/idUtils';
 import { issuePath } from '../../utils/issueUrl';
+import { getProjectStatusLabel } from '../../utils/roleUtils';
 import { AssignTaskModal } from './AssignTaskModal';
 export const TLDashboard = () => {
     const navigate = useNavigate();
@@ -160,7 +161,7 @@ export const TLDashboard = () => {
         ═══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Active Tasks" value={activeTasks.length} icon={ClipboardList} iconColor="#0d9488" iconBg="#ccfbf1" onClick={() => navigate('/tl/tasks')}/>
-        <StatCard title="Completed Today" value={doneTodayTasks.length} icon={CheckCircle} iconColor="#10b981" iconBg="#d1fae5" trend={myTasks.length > 0 ? Math.round((doneTodayTasks.length / Math.max(myTasks.length, 1)) * 100) : 0} trendLabel="of total tasks"/>
+        <StatCard title="Completed Today" value={doneTodayTasks.length} icon={CheckCircle} iconColor="#10b981" iconBg="#d1fae5" trend={myTasks.length > 0 ? Math.round((doneTodayTasks.length / Math.max(myTasks.length, 1)) * 100) : 0} trendLabel="Of Total Tasks"/>
         <StatCard title="Overdue Work" value={overdueTasks.length} icon={AlertTriangle} iconColor={overdueTasks.length > 0 ? '#ef4444' : '#10b981'} iconBg={overdueTasks.length > 0 ? '#fee2e2' : '#d1fae5'} badge={overdueTasks.length > 0 ? 'Urgent' : undefined} badgeColor="badge-red" onClick={() => navigate('/tl/tasks')}/>
         <StatCard title="Active Bugs" value={openBugs.length} icon={Bug} iconColor={openBugs.length > 0 ? '#ef4444' : '#10b981'} iconBg={openBugs.length > 0 ? '#fee2e2' : '#d1fae5'} onClick={() => navigate('/tl/bugs')}/>
       </div>
@@ -194,7 +195,7 @@ export const TLDashboard = () => {
             <div className="flex items-center gap-2">
               <Flame className="w-4 h-4 text-[#f59e0b]"/>
               <h2 className="section-title mb-0">Today's Focus</h2>
-              <span className="badge-amber text-[10px]">{dueTodayTasks.length} due today</span>
+              <span className="badge-amber text-[10px]">{dueTodayTasks.length} Due Today</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -219,7 +220,7 @@ export const TLDashboard = () => {
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#f1f5f9]">
             <div className="flex items-center gap-2">
               <h2 className="section-title mb-0">Team Member Workload</h2>
-              <span className="badge-teal text-[10px]">{capacityPct}% capacity</span>
+              <span className="badge-teal text-[10px]">{capacityPct}% Capacity</span>
             </div>
             <button className="text-xs text-[#0d9488] font-bold hover:text-[#0f766e]" onClick={() => navigate('/tl/team')}>
               View Full Team →
@@ -249,15 +250,15 @@ export const TLDashboard = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-[11px]">
-                        {inProgMember > 0 && <span className="text-[#0d9488] font-semibold">{inProgMember} active</span>}
-                        {todoMember > 0 && <span className="text-[#6b7280] font-semibold">{todoMember} queued</span>}
-                        {doneMember > 0 && <span className="text-[#059669] font-semibold">{doneMember} done</span>}
-                        {overdueMember > 0 && <span className="text-[#ef4444] font-bold">{overdueMember} overdue</span>}
+                        {inProgMember > 0 && <span className="text-[#0d9488] font-semibold">{inProgMember} Active</span>}
+                        {todoMember > 0 && <span className="text-[#6b7280] font-semibold">{todoMember} Queued</span>}
+                        {doneMember > 0 && <span className="text-[#059669] font-semibold">{doneMember} Done</span>}
+                        {overdueMember > 0 && <span className="text-[#ef4444] font-bold">{overdueMember} Overdue</span>}
                       </div>
                     </div>
                     <ProgressBar value={memberTasks.length > 0 ? Math.round((doneMember / memberTasks.length) * 100) : 0} height="sm" color={overdueMember > 0 ? '#ef4444' : capacityColor}/>
                     <div className="text-[10px] text-[#9ca3af] mt-1">
-                      {activeMember} active of {memberTasks.length} total
+                      {activeMember} Active of {memberTasks.length} Total
                     </div>
                   </div>
                   {/* Quick Actions */}
@@ -282,7 +283,7 @@ export const TLDashboard = () => {
                 <div className="flex items-center gap-2">
                   <h2 className="section-title mb-0">Iteration Health</h2>
                   {sprintOverdue > 0 && (<span className="badge-red text-[10px]">
-                      <Siren className="w-3 h-3 inline mr-0.5"/> {sprintOverdue} overdue
+                      <Siren className="w-3 h-3 inline mr-0.5"/> {sprintOverdue} Overdue
                     </span>)}
                 </div>
               </div>
@@ -318,7 +319,7 @@ export const TLDashboard = () => {
               </div>
               <div className="mt-3 flex items-center justify-between text-[10px] text-[#9ca3af]">
                 <span>{formatShortDate(activeSprint.startDate)} — {formatShortDate(activeSprint.endDate)}</span>
-                <span>{sprintTasks.length - sprintDone} items remaining</span>
+                <span>{sprintTasks.length - sprintDone} Items Remaining</span>
               </div>
             </div>) : (<div className="card p-6 text-center">
               <CalendarRange className="w-8 h-8 text-[#e2e8f0] mx-auto mb-2"/>
@@ -339,21 +340,21 @@ export const TLDashboard = () => {
               {overdueTasks.length > 0 && (<div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-[#fef2f2] border border-[#fecaca]">
                   <AlertTriangle className="w-4 h-4 text-[#ef4444] flex-shrink-0"/>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#1a1d23]">{overdueTasks.length} overdue task{overdueTasks.length !== 1 ? 's' : ''}</div>
+                    <div className="text-xs font-semibold text-[#1a1d23]">{overdueTasks.length} Overdue Task{overdueTasks.length !== 1 ? 's' : ''}</div>
                     <div className="text-[10px] text-[#9ca3af]">Requires immediate attention</div>
                   </div>
                 </div>)}
               {blockedTasks.length > 0 && (<div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-[#fff7ed] border border-[#fed7aa]">
                   <ShieldAlert className="w-4 h-4 text-[#f97316] flex-shrink-0"/>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#1a1d23]">{blockedTasks.length} blocked task{blockedTasks.length !== 1 ? 's' : ''}</div>
+                    <div className="text-xs font-semibold text-[#1a1d23]">{blockedTasks.length} Blocked Task{blockedTasks.length !== 1 ? 's' : ''}</div>
                     <div className="text-[10px] text-[#9ca3af]">Dependencies or blockers</div>
                   </div>
                 </div>)}
               {criticalBugs.length > 0 && (<div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-[#fef2f2] border border-[#fecaca]">
                   <Bug className="w-4 h-4 text-[#ef4444] flex-shrink-0"/>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#1a1d23]">{criticalBugs.length} critical bug{criticalBugs.length !== 1 ? 's' : ''}</div>
+                    <div className="text-xs font-semibold text-[#1a1d23]">{criticalBugs.length} Critical Bug{criticalBugs.length !== 1 ? 's' : ''}</div>
                     <div className="text-[10px] text-[#9ca3af]">Impact on delivery timeline</div>
                   </div>
                 </div>)}
@@ -609,18 +610,18 @@ export const TLDashboard = () => {
                     <div className="flex items-start justify-between mb-1.5">
                       <h3 className="text-xs font-bold text-[#1a1d23] group-hover:text-[#0d9488] transition-colors truncate">{project.name}</h3>
                       <span className={`badge text-[10px] flex-shrink-0 ml-2 ${project.status === 'ACTIVE' ? 'badge-green' : 'badge-teal'}`}>
-                        {project.status}
+                        {getProjectStatusLabel(project.status)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-[10px] text-[#9ca3af] mb-2">
                       <span className="flex items-center gap-1">
                         <CalendarRange className="w-3 h-3"/>
-                        {projectSprintCount} iteration{projectSprintCount !== 1 ? 's' : ''}
+                        {projectSprintCount} Iteration{projectSprintCount !== 1 ? 's' : ''}
                       </span>
-                      <span>{projectActiveTasks} active</span>
+                      <span>{projectActiveTasks} Active</span>
                     </div>
                     <ProgressBar value={project.progress} height="sm" color="#0d9488"/>
-                    <div className="text-[10px] text-[#9ca3af] mt-1.5">{project.progress}% complete</div>
+                    <div className="text-[10px] text-[#9ca3af] mt-1.5">{project.progress}% Complete</div>
                   </div>);
             })}
             </div>) : (<div className="text-center py-6">

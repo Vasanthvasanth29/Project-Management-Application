@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ListTodo } from 'lucide-react';
+import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -13,7 +13,8 @@ import { getIssueKeyPrefix } from '../../utils/projectIdentity';
 import { issuePath, appHref } from '../../utils/issueUrl';
 import { canManageSprint, canStartSprint, canCompleteSprint, canEditSprint, canArchiveSprint, canDeleteSprint, isCancelledWorkItem, displayTaskStatus, getStatusLabel } from '../../utils/roleUtils';
 import { buildSprintIdentifiers, formatSprintIdentifier, formatSprintFullTitle, formatSprintPiTitle, formatSprintDateRange } from '../../utils/sprintIdentifier';
-import { sortProjectPis, groupSprintsByPi, canCreateIterationInPi, piStatusOf, formatIsoDay } from '../../utils/programIncrement';
+import { sortProjectPis, groupSprintsByPi, canCreateIterationInPi, piStatusOf, formatIsoDay, piNumberForSprint } from '../../utils/programIncrement';
+import { fmtIterationRange } from '../../components/common/IterationHeader';
 import { usePiPlan, splitPiPlanSections } from '../../data/piSprintStructure';
 import { getEpicColor, sortProjectSprints, buildProjectTeamMembers, buildSprintIssuesMap, resolveIssueTaskId, } from '../../utils/sprintIssues';
 import { SprintCompletionModal } from './SprintCompletionModal';
@@ -103,6 +104,17 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
             : defaultSprint.id);
     }, [projectSprints, defaultSprint]);
     const currentSprint = projectSprints.find((s) => s.id === selectedSprintId) || defaultSprint;
+    const currentPiNumber = useMemo(() => (currentSprint ? piNumberForSprint(currentSprint, pis) : undefined), [currentSprint, pis]);
+    const currentDaysLeft = useMemo(() => {
+        if (!currentSprint || !currentSprint.endDate)
+            return 0;
+        const end = new Date(currentSprint.endDate);
+        const now = new Date();
+        if (isNaN(end.getTime()))
+            return 0;
+        const ms = end.getTime() - now.getTime();
+        return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+    }, [currentSprint]);
     // One-based sprint identifiers: <Project Key><PI>.<Iteration Number>, e.g. ECOMM4.1
     const sprintIdentifiers = useMemo(() => buildSprintIdentifiers(projectSprints, projectKey), [projectSprints, projectKey]);
     const getSprintIdentifier = (sprint) => formatSprintIdentifier(sprint, projectKey, sprintIdentifiers);
@@ -1767,8 +1779,14 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
                   </div>
                 </div>) : (<div className={`px-3 py-1 min-h-[38px] flex items-center gap-x-2 gap-y-1 flex-wrap ${currentOpen ? 'border-b border-[#ebecf0]' : ''}`} data-iteration-summary data-iteration-compact-header>
                 <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+                    {currentPiNumber !== undefined && (<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0">
+                        PI {currentPiNumber}
+                      </span>)}
                     <h2 className="text-xl font-bold text-[#172b4d] tracking-tight whitespace-nowrap" title={getSprintIdentifier(currentSprint)}>
                       {currentSprint.iterationNumber || getSprintIdentifier(currentSprint)}
+                      {currentSprint.startDate && currentSprint.endDate && (<span className="ml-1.5 text-[13px] font-semibold text-[#42526e]">
+                          [{fmtIterationRange(currentSprint.startDate, currentSprint.endDate)}]
+                        </span>)}
                     </h2>
 
                     {/* Status switcher (same permission-gated flow as before) */}
@@ -1814,6 +1832,10 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
                     <span className="inline-flex items-center gap-1 tabular-nums whitespace-nowrap text-[11px] text-[#6b778c] font-medium" title={`${currentFlagged} flagged work item(s)`}>
                       <Flag className="w-3 h-3 fill-[#0052cc] text-[#0052cc]"/>
                       {currentFlagged} flagged
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b778c] whitespace-nowrap">
+                      <CalendarDays className="w-3.5 h-3.5"/>
+                      {currentDaysLeft} day{currentDaysLeft === 1 ? '' : 's'} left
                     </span>
                     <button type="button" onClick={() => navigate(`/pm/issues/search?sprint=${toUrlId(currentSprint.id)}`)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0052cc] hover:underline cursor-pointer whitespace-nowrap" title="Search work items in this iteration">
                       <ListTree className="w-3 h-3"/>

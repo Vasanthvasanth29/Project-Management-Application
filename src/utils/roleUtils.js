@@ -118,6 +118,26 @@ export const getUserStatusLabel = (status) => {
     };
     return labels[status];
 };
+export const getSprintStatusLabel = (status) => {
+    const labels = {
+        PLANNED: 'Planned',
+        PLANNING: 'Planning',
+        ACTIVE: 'Active',
+        COMPLETED: 'Completed',
+        CANCELLED: 'Cancelled',
+    };
+    return labels[status] || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, ' ') : '');
+};
+export const getProjectStatusLabel = (status) => {
+    const labels = {
+        ACTIVE: 'Active',
+        PLANNING: 'Planning',
+        ON_HOLD: 'On Hold',
+        COMPLETED: 'Completed',
+        CANCELLED: 'Cancelled',
+    };
+    return labels[status] || (status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' '));
+};
 export const getSprintStatusColor = (status) => {
     const colors = {
         PLANNED: 'badge-gray',

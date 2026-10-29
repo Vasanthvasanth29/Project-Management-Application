@@ -8,8 +8,8 @@ export const StartNode = memo(({ data, selected }) => {
       <div className="w-5 h-5 rounded-full bg-[#3b82f6] flex items-center justify-center text-white">
         <Play className="w-2.5 h-2.5 fill-current ml-0.5"/>
       </div>
-      <span className="text-xs font-bold tracking-wider uppercase font-display">
-        {nodeData.label || 'START'}
+      <span className="text-xs font-bold tracking-wider font-display">
+        {nodeData.label || 'Start'}
       </span>
 
       <Handle type="source" position={Position.Bottom} className="!w-2.5 !h-2.5 !bg-[#3b82f6] !border-2 !border-white transition-transform group-hover:scale-125"/>

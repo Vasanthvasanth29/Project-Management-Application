@@ -110,7 +110,7 @@ export const SprintLinkModal = ({ sprint, isOpen, onClose, }) => {
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
             <div className="flex items-center gap-2 mb-3">
               <Plus className="w-4 h-4 text-indigo-600"/>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <h3 className="text-xs font-bold tracking-wider text-slate-800">
                 Link with Iteration from Another Project
               </h3>
             </div>
@@ -181,7 +181,7 @@ export const SprintLinkModal = ({ sprint, isOpen, onClose, }) => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <GitBranch className="w-4 h-4 text-slate-600"/>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                <h3 className="text-xs font-bold tracking-wider text-slate-800">
                   Active Linked Iterations ({linkedItems.length})
                 </h3>
               </div>

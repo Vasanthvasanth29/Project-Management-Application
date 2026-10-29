@@ -202,7 +202,7 @@ export const InitiativeKanbanBoard = ({ initiatives }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full ${style.dot}`}/>
-              <h3 className="text-[11px] font-bold text-[#1a1d23] uppercase tracking-wider">
+              <h3 className="text-[11px] font-bold text-[#1a1d23] tracking-wider">
                 {INITIATIVE_BOARD_STATUS_LABEL[id]}
               </h3>
             </div>
@@ -210,7 +210,7 @@ export const InitiativeKanbanBoard = ({ initiatives }) => {
               {colTasks.length}
             </span>
           </div>
-          {isTerminal && (<div className="text-[9px] font-bold text-emerald-700 mt-1 uppercase tracking-wide">
+          {isTerminal && (<div className="text-[9px] font-bold text-emerald-700 mt-1 tracking-wide">
               Terminal — no further moves
             </div>)}
           {id === 'ON_HOLD' && (<div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 mt-1">

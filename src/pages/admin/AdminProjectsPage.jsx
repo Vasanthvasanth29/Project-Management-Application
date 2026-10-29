@@ -11,6 +11,7 @@ import { CreateProjectModal } from './CreateProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { formatDate, isOverdue, isDateInRange } from '../../utils/dateUtils';
 import { getProjectUrl, getProjectPiUrl } from '../../utils/idUtils';
+import { getProjectStatusLabel } from '../../utils/roleUtils';
 export const AdminProjectsPage = () => {
     const navigate = useNavigate();
     const { projects, users, tasks, sprints, updateProject, deleteProject } = useAppStore();
@@ -135,8 +136,8 @@ export const AdminProjectsPage = () => {
                             {project.key}
                           </span>)}
                         <h3 className="text-base font-bold text-slate-900 truncate group-hover:text-[#1a73e8] transition-colors">{project.name}</h3>
-                        <span className={statusColors[project.status]}>{project.status}</span>
-                        {project.isArchived && <span className="badge-purple">ARCHIVED</span>}
+                        <span className={statusColors[project.status]}>{getProjectStatusLabel(project.status)}</span>
+                        {project.isArchived && <span className="badge-purple">Archived</span>}
                         {project.category && (<span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
                             {project.category}
                           </span>)}
@@ -207,11 +208,11 @@ export const AdminProjectsPage = () => {
                   {/* Quick Metrics */}
                   <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
                     <div className="p-2 rounded-lg bg-slate-50">
-                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Tasks</span>
+                      <span className="text-slate-400 block text-[10px] font-semibold">Tasks</span>
                       <span className="font-semibold text-slate-700">{doneTasks}/{totalTasks} Done</span>
                     </div>
                     <div className="p-2 rounded-lg bg-slate-50">
-                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Live Iteration</span>
+                      <span className="text-slate-400 block text-[10px] font-semibold">Live Iteration</span>
                       <span className="font-semibold text-slate-700">{activeSprint ? activeSprint.name : 'None'}</span>
                     </div>
                   </div>

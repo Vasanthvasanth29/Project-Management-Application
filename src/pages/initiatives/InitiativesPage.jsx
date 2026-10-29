@@ -96,12 +96,12 @@ export const InitiativesPage = () => {
             <span className="font-semibold text-[#172b4d] truncate group-hover:text-[#0d9488] transition-colors">
               {task.title}
             </span>
-            {task.isArchived && (<span className="badge badge-gray text-[9px] px-1.5 py-0 flex-shrink-0">ARCHIVED</span>)}
+            {task.isArchived && (<span className="badge badge-gray text-[9px] px-1.5 py-0 flex-shrink-0">Archived</span>)}
           </div>
           {task.description && (<p className="text-[10px] text-[#9ca3af] truncate mt-0.5">{task.description}</p>)}
         </div>
 
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide w-fit ${boardStatus === 'COMPLETED'
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide w-fit ${boardStatus === 'COMPLETED'
                 ? 'badge-green'
                 : boardStatus === 'ON_HOLD'
                     ? 'badge-amber'
@@ -127,7 +127,7 @@ export const InitiativesPage = () => {
           <div className={`text-[11px] font-medium ${getDueDateClass(task.dueDate)}`}>
             {task.dueDate ? formatShortDate(task.dueDate) : 'No target'}
           </div>
-          {isOverdue && <div className="text-[9px] font-bold text-[#ef4444]">OVERDUE</div>}
+          {isOverdue && <div className="text-[9px] font-bold text-[#ef4444]">Overdue</div>}
         </div>
 
         <div className="min-w-0">
@@ -213,7 +213,7 @@ export const InitiativesPage = () => {
       </div>
 
       {view === 'board' ? (<InitiativeKanbanBoard initiatives={filtered}/>) : (<div className="card overflow-hidden">
-          <div className="grid grid-cols-[minmax(0,2fr)_110px_96px_140px_120px_130px_72px] items-center gap-x-3 px-4 py-2.5 bg-[#f8fafc] border-b border-[#e2e5ea] text-[10px] font-bold uppercase tracking-wider text-[#6b778c]">
+          <div className="grid grid-cols-[minmax(0,2fr)_110px_96px_140px_120px_130px_72px] items-center gap-x-3 px-4 py-2.5 bg-[#f8fafc] border-b border-[#e2e5ea] text-[10px] font-bold tracking-wider text-[#6b778c]">
             <span>Initiative</span>
             <span>Status</span>
             <span>Priority</span>

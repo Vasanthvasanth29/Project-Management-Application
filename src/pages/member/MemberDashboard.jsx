@@ -103,13 +103,13 @@ export const MemberDashboard = () => {
         {/* Sidebar: Responsibility & Bugs */}
         <div className="space-y-4">
           {activeTasks[0] && (<div className="card p-6">
-              <h3 className="text-xs font-bold text-[#4b5563] uppercase tracking-wider mb-3">Primary Responsibility Hierarchy</h3>
+              <h3 className="text-xs font-bold text-[#4b5563] tracking-wider mb-3">Primary Responsibility Hierarchy</h3>
               <ResponsibilityChain admin={users.find((u) => u.role === 'ADMIN')} projectManager={users.find((u) => u.id === projects.find((p) => p.id === activeTasks[0].projectId)?.projectManagerId)} team={teams.find((t) => t.id === activeTasks[0].teamId)} teamLeader={users.find((u) => u.id === activeTasks[0].teamLeaderId)} member={currentUser || undefined} taskTitle={activeTasks[0].title} compact/>
             </div>)}
 
           {myBugs.length > 0 && (<div className="card p-6">
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#f1f5f9]">
-                <h3 className="text-xs font-bold text-[#4b5563] uppercase tracking-wider">Assigned Bugs</h3>
+                <h3 className="text-xs font-bold text-[#4b5563] tracking-wider">Assigned Bugs</h3>
                 <span className="badge-red text-[10px]">{myBugs.length}</span>
               </div>
               <div className="space-y-2">
@@ -117,7 +117,7 @@ export const MemberDashboard = () => {
                     <BugIssueIcon className="w-3.5 h-3.5 flex-shrink-0"/>
                     <span className="text-xs font-semibold text-[#1a1d23] truncate flex-1">{bug.title}</span>
                     <span className={`badge text-[9px] ${bug.severity === 'CRITICAL' ? 'badge-red' : bug.severity === 'HIGH' ? 'badge-orange' : 'badge-amber'}`}>
-                      {bug.severity}
+                      {bug.severity === 'CRITICAL' ? 'Critical' : bug.severity === 'HIGH' ? 'High' : bug.severity === 'MEDIUM' ? 'Medium' : 'Low'}
                     </span>
                   </div>))}
               </div>

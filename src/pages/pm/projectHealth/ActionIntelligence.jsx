@@ -50,7 +50,7 @@ export const ActionIntelligence = ({ items, onAction }) => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Zap className="w-3.5 h-3.5" style={{ color: topConfig.color }}/>
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: topConfig.color }}>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: topConfig.color }}>
                 Do This First
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: topConfig.color, backgroundColor: topConfig.bg }}>
@@ -65,11 +65,11 @@ export const ActionIntelligence = ({ items, onAction }) => {
             </p>
             <div className="space-y-1.5 mt-2 mb-3">
               <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-[#dc2626] uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">Why</span>
+                <span className="text-[9px] font-bold text-[#dc2626] tracking-wider w-10 flex-shrink-0 pt-0.5">Why</span>
                 <span className="text-[10px] text-[#4b5563] leading-relaxed">{topItem.whyDetected}</span>
               </div>
               <div className="flex items-start gap-1.5">
-                <span className="text-[9px] font-bold text-[#2563eb] uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">Impact</span>
+                <span className="text-[9px] font-bold text-[#2563eb] tracking-wider w-10 flex-shrink-0 pt-0.5">Impact</span>
                 <span className="text-[10px] text-[#4b5563] leading-relaxed">{topItem.impact}</span>
               </div>
             </div>
@@ -129,15 +129,15 @@ export const ActionIntelligence = ({ items, onAction }) => {
                   {isExpanded && (<div className="px-3.5 pb-3.5 pt-0 border-t border-[#f1f5f9]">
                       <div className="space-y-1.5 mt-3 mb-2">
                         <div className="flex items-start gap-1.5">
-                          <span className="text-[9px] font-bold text-[#dc2626] uppercase tracking-wider w-12 flex-shrink-0 pt-0.5">Why</span>
+                          <span className="text-[9px] font-bold text-[#dc2626] tracking-wider w-12 flex-shrink-0 pt-0.5">Why</span>
                           <span className="text-[10px] text-[#4b5563] leading-relaxed">{item.whyDetected}</span>
                         </div>
                         <div className="flex items-start gap-1.5">
-                          <span className="text-[9px] font-bold text-[#2563eb] uppercase tracking-wider w-12 flex-shrink-0 pt-0.5">Impact</span>
+                          <span className="text-[9px] font-bold text-[#2563eb] tracking-wider w-12 flex-shrink-0 pt-0.5">Impact</span>
                           <span className="text-[10px] text-[#4b5563] leading-relaxed">{item.impact}</span>
                         </div>
                         <div className="flex items-start gap-1.5">
-                          <span className="text-[9px] font-bold text-[#059669] uppercase tracking-wider w-12 flex-shrink-0 pt-0.5">Action</span>
+                          <span className="text-[9px] font-bold text-[#059669] tracking-wider w-12 flex-shrink-0 pt-0.5">Action</span>
                           <span className="text-[10px] text-[#4b5563] leading-relaxed">{item.recommendedAction}</span>
                         </div>
                       </div>

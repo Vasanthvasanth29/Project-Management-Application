@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, LayoutGrid, Users, X, MessageSquare, Trash2, Ban, RotateCcw } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LayoutDashboard, LayoutGrid, X, MessageSquare, Trash2, Ban, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
+import { IterationHeader } from '../../components/common/IterationHeader';
 import { getPriorityDotColor, isCancelledWorkItem } from '../../utils/roleUtils';
 import { getIssueKeyPrefix } from '../../utils/projectIdentity';
 import { piNumberForSprint } from '../../utils/programIncrement';
+import { matchId } from '../../utils/idUtils';
 import { sortProjectSprints, buildProjectTeamMembers, buildSprintIssuesMap, } from '../../utils/sprintIssues';
 import { useIterationPaths } from './IterationModuleLayout';
 import { BOARD_COLUMNS, columnLabel, columnOfStatus, statusForColumn, canTransition, isValidDropTarget, needsComment, } from './sprintBoardTransitions';
@@ -130,13 +132,24 @@ const makePasteAttachment = (image) => {
         attachedAt: new Date().toISOString(),
     };
 };
-export const ActiveSprintPage = ({ project }) => {
+export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { basePath } = useIterationPaths();
     const { sprints, pis, tasks, users, teams, updateTask, addComment, assignTask, issueStatusOverrides, issueResolutions, issueComments, setIssueStatusOverride, setIssueResolutionOverride, addIssueComment, setIssueAssigneeOverride, } = useAppStore();
     const { currentUser } = useAuthStore();
+    const requestedSprintParam = sprint?.id || sprintId || searchParams.get('sprintId') || searchParams.get('sprint') || searchParams.get('iteration');
     const projectSprints = useMemo(() => sortProjectSprints(sprints, project.id), [sprints, project.id]);
-    const activeSprint = useMemo(() => projectSprints.find((s) => s.status === 'ACTIVE'), [projectSprints]);
+    const activeSprint = useMemo(() => {
+        if (sprint)
+            return sprint;
+        if (requestedSprintParam) {
+            const found = projectSprints.find((s) => matchId(s.id, requestedSprintParam) || s.iterationNumber === requestedSprintParam || s.name === requestedSprintParam);
+            if (found)
+                return found;
+        }
+        return projectSprints.find((s) => s.status === 'ACTIVE') || projectSprints[0];
+    }, [sprint, requestedSprintParam, projectSprints]);
     // Project → PI → Iteration: the PI this live iteration belongs to.
     const activePiNumber = useMemo(() => (activeSprint ? piNumberForSprint(activeSprint, pis) : undefined), [activeSprint, pis]);
     const projectTeamMembers = useMemo(() => buildProjectTeamMembers(project, teams, users), [project, teams, users]);
@@ -643,44 +656,10 @@ export const ActiveSprintPage = ({ project }) => {
             : undefined;
     const visibleMembers = showAllMembers ? assignees : assignees.slice(0, 6);
     return (<div className="flex-1 min-w-0 pt-1 flex flex-col">
-      <div className="flex-shrink-0 pb-3 flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          {/* Line 1: small project name + PI context chip. */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="text-[11px] font-semibold text-[#6b778c] truncate leading-tight">
-              {project.name}
-            </div>
-            {activePiNumber !== undefined && (<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0">
-                PI {activePiNumber}
-              </span>)}
-          </div>
-          {/* Line 2: sprint title + date range share one line (badge and compact
-            counts alongside); no separate description line. */}
-          <div className="flex items-center gap-2 flex-wrap min-w-0 mt-0.5">
-            <h2 className="text-base font-bold text-[#1f1f1f] truncate min-w-0">
-              {activeSprint.name}
-              <span className="ml-1.5 text-[13px] font-semibold text-[#42526e]">
-                [{fmtRange(activeSprint.startDate, activeSprint.endDate)}]
-              </span>
-            </h2>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#00875a] text-white shadow-2xs">
-              Active
-            </span>
-            <span className="text-xs font-semibold text-[#6b778c]">
-              {issues.length} issue{issues.length === 1 ? '' : 's'}
-            </span>
-            <span className="text-[#d0d1d4]">|</span>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b778c]">
-              <CalendarDays className="w-3.5 h-3.5"/>
-              {daysLeft} day{daysLeft === 1 ? '' : 's'} left
-            </span>
-          </div>
-        </div>
-        <button onClick={() => navigate(`${basePath}/iteration-board`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white shadow-xs transition-colors cursor-pointer flex-shrink-0">
-          <LayoutGrid className="w-3.5 h-3.5"/>
-          Iteration Board
-        </button>
-      </div>
+      <IterationHeader projectName={project.name} piNumber={activePiNumber} sprintName={activeSprint.name} startDate={activeSprint.startDate} endDate={activeSprint.endDate} status={activeSprint.status} issuesCount={issues.length} daysLeft={daysLeft} rightAction={<button onClick={() => navigate(`${basePath}/iteration-board`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white shadow-xs transition-colors cursor-pointer flex-shrink-0">
+            <LayoutGrid className="w-3.5 h-3.5"/>
+            Iteration Board
+          </button>}/>
 
       <div className="flex-shrink-0 pb-3 flex items-center gap-2 flex-wrap">
         <div role="group" aria-label="Quick filters" className="inline-flex items-center gap-0.5 bg-white border border-[#dfe1e6] rounded-lg p-0.5">
@@ -705,18 +684,11 @@ export const ActiveSprintPage = ({ project }) => {
             </button>)}
         </div>
 
-        <div className="ml-auto flex items-center gap-2 text-xs text-[#6b778c]">
-          {filteredIssues.length === 0 ? (<span data-empty-filter className="font-bold text-[#6b778c]">
+        {filteredIssues.length === 0 && (<div className="ml-auto flex items-center gap-2 text-xs text-[#6b778c]">
+            <span data-empty-filter className="font-bold text-[#6b778c]">
               No work items match the current filter
-            </span>) : (<span data-visible-count className="font-semibold">
-              {filteredIssues.length} of {issues.length} work items
-            </span>)}
-          <span className="text-[#d0d1d4]">|</span>
-          <span className="inline-flex items-center gap-1 font-semibold">
-            <Users className="w-3.5 h-3.5"/>
-            {assignees.length} member{assignees.length === 1 ? '' : 's'}
-          </span>
-        </div>
+            </span>
+          </div>)}
       </div>
 
       <div data-board className="flex flex-col min-h-[calc(100vh_-_16rem)] overflow-x-auto pb-4">
@@ -816,8 +788,8 @@ export const ActiveSprintPage = ({ project }) => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-2.5 pt-2 min-h-[18px] flex-shrink-0">
-                    {over && (!isDone || !over.valid) && (<span className={`text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${over.valid ? 'bg-[#36b37e] text-white' : 'bg-[#6b778c] text-white'}`}>
-                        {over.valid ? 'Drop here' : 'Not allowed'}
+                    {over && (!isDone || !over.valid) && (<span className={`text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded ${over.valid ? 'bg-[#36b37e] text-white' : 'bg-[#6b778c] text-white'}`}>
+                        {over.valid ? 'Drop Here' : 'Not Allowed'}
                       </span>)}
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col gap-2 px-2.5 py-2">
@@ -831,11 +803,11 @@ export const ActiveSprintPage = ({ project }) => {
                             : zone === 'CANCELLED'
                                 ? 'border-[#dfe1e6] bg-[#f7f8f9]'
                                 : 'border-[#abf5d1] bg-[#e3fcef]/50'}`}>
-                            <div className={`text-[10px] font-black uppercase tracking-wider ${zone === 'CANCELLED' ? 'text-[#6b778c]' : 'text-[#00875a]'}`}>
+                            <div className={`text-[10px] font-bold tracking-wider ${zone === 'CANCELLED' ? 'text-[#6b778c]' : 'text-[#00875a]'}`}>
                               {zone === 'CANCELLED' ? 'Cancelled' : 'Done'}
                             </div>
-                            <div className="text-[9px] font-black uppercase tracking-wider text-[#8590a2] mt-0.5">
-                              Drop here
+                            <div className="text-[9px] font-bold tracking-wider text-[#8590a2] mt-0.5">
+                              Drop Here
                             </div>
                           </div>))}
                       </div>)}
@@ -856,7 +828,7 @@ export const ActiveSprintPage = ({ project }) => {
           <div role="dialog" aria-modal="true" aria-label="Transition dialog" className="w-full max-w-lg bg-white rounded-xl border border-[#dfe1e6] shadow-2xl p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#747775]">New status</div>
+                <div className="text-[10px] font-bold tracking-wider text-[#747775]">New status</div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold flex-wrap">
                   <span className="px-1.5 py-0.5 rounded bg-[#f1f2f4] text-[#42526e]">
                     {columnLabel[pendingTransition.from]}

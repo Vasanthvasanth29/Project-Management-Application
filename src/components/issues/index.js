@@ -1,7 +1,7 @@
 export { IssueSection } from './IssueSection';
 export { IssueField, IssueChips } from './IssueField';
 export { IssueDetailsSection } from './IssueDetailsSection';
-export { CustomFieldHeaderAction, useCustomFieldRows } from './IssueCustomFields';
+export { useCustomFieldRows } from './IssueCustomFields';
 export { ParentLink } from './ParentLink';
 export { ChildIssueList } from './ChildIssueList';
 export { IssueLinks } from './IssueLinks';

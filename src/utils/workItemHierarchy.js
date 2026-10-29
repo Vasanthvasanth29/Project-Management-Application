@@ -17,7 +17,9 @@ export const WORK_ITEM_TYPE_LABEL = {
     EPIC: 'Epic',
     STORY: 'Story',
     TASK: 'Task',
-    'SUB-TASK': 'Sub-task',
+    'SUB-TASK': 'Sub-Task',
+    SUBTASK: 'Sub-Task',
+    SUB_TASK: 'Sub-Task',
     BUG_FIX: 'Bug Fix',
     IMPROVEMENT: 'Improvement',
 };
@@ -67,7 +69,8 @@ export const ROOT_CREATABLE_TYPES = [
 export function getWorkItemLabel(type) {
     if (!type)
         return 'Work Item';
-    return WORK_ITEM_TYPE_LABEL[type] || String(type);
+    const norm = String(type).toUpperCase().replace(/_/g, '-');
+    return WORK_ITEM_TYPE_LABEL[norm] || WORK_ITEM_TYPE_LABEL[type] || String(type);
 }
 /** True when `childType` is a valid child of `parentType`. */
 export function isValidParentChild(parentType, childType) {

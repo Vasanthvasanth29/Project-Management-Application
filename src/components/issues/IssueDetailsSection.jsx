@@ -178,7 +178,7 @@ export const IssueDetailsSection = ({ task, onOpenIssue, defaultOpen = true, }) 
             <Compass className="w-3.5 h-3.5"/>
           </div>
           <div className="min-w-0">
-            <p className="fe-label font-bold uppercase tracking-wider text-[#0f766e]">
+            <p className="fe-label font-bold tracking-wider text-[#0f766e]">
               Top-level planning item
             </p>
             <p className="fe-label leading-relaxed mt-0.5">

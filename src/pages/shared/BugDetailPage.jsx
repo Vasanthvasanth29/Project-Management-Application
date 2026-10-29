@@ -112,7 +112,7 @@ export const BugDetailPage = () => {
             {/* Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-[#0d9488] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0d9488] tracking-wider">
                   {project?.name}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">{bug.id}</span>
@@ -129,7 +129,7 @@ export const BugDetailPage = () => {
             {/* Status Actions */}
             <div className="p-4 rounded-xl bg-[#f8f9fb] border border-[#e2e5ea] flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider mb-1">Current Status</div>
+                <div className="text-[10px] text-[#9ca3af] tracking-wider mb-1">Current Status</div>
                 <BugStatusBadge status={bug.status}/>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -154,21 +154,21 @@ export const BugDetailPage = () => {
             {/* Info Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-slate-100 pt-4 text-xs">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Severity</span>
+                <span className="text-[10px] font-bold text-slate-500">Severity</span>
                 <div className="mt-1 flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${getPriorityDot(bug.severity)}`}/>
                   <span className="font-semibold text-slate-700">{bug.severity}</span>
                 </div>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Reported By</span>
+                <span className="text-[10px] font-bold text-slate-500">Reported By</span>
                 <div className="mt-1 flex items-center gap-1.5">
                   {reporter && <Avatar name={reporter.name} color={reporter.avatarColor} size="xs"/>}
                   <span className="font-semibold text-slate-700">{reporter?.name || 'Unknown'}</span>
                 </div>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Assigned To</span>
+                <span className="text-[10px] font-bold text-slate-500">Assigned To</span>
                 <div className="mt-1 flex items-center gap-1.5">
                   {assignee ? (<>
                       <Avatar name={assignee.name} color={assignee.avatarColor} size="xs"/>
@@ -177,7 +177,7 @@ export const BugDetailPage = () => {
                 </div>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Reported</span>
+                <span className="text-[10px] font-bold text-slate-500">Reported</span>
                 <div className="mt-1 flex items-center gap-1.5">
                   <Calendar className="w-3 h-3 text-slate-400"/>
                   <span className="font-semibold text-slate-700">{formatDate(bug.createdAt)}</span>
@@ -187,7 +187,7 @@ export const BugDetailPage = () => {
 
             {/* Steps to Reproduce */}
             {bug.steps && (<div className="border-t border-slate-100 pt-4">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Steps to Reproduce</span>
+                <span className="text-[10px] font-bold text-slate-500">Steps to Reproduce</span>
                 <p className="text-xs text-slate-700 mt-1 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3 rounded-lg border border-slate-100">
                   {bug.steps}
                 </p>
@@ -196,13 +196,13 @@ export const BugDetailPage = () => {
             {/* Expected / Actual Behavior */}
             {(bug.expectedBehavior || bug.actualBehavior) && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
                 {bug.expectedBehavior && (<div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Expected Result</span>
+                    <span className="text-[10px] font-bold text-slate-500">Expected Result</span>
                     <p className="text-xs text-slate-700 mt-1 bg-emerald-50 p-3 rounded-lg border border-emerald-100">
                       {bug.expectedBehavior}
                     </p>
                   </div>)}
                 {bug.actualBehavior && (<div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Actual Result</span>
+                    <span className="text-[10px] font-bold text-slate-500">Actual Result</span>
                     <p className="text-xs text-slate-700 mt-1 bg-red-50 p-3 rounded-lg border border-red-100">
                       {bug.actualBehavior}
                     </p>
@@ -312,7 +312,7 @@ export const BugDetailPage = () => {
         <div className="space-y-4">
           {/* Status Card */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Bug Details</h3>
+            <h3 className="text-xs font-bold text-slate-800 tracking-wider mb-3">Bug Details</h3>
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Status</span>
@@ -352,7 +352,7 @@ export const BugDetailPage = () => {
 
           {/* Attachments Summary */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <h3 className="text-xs font-bold text-slate-800 tracking-wider mb-3 flex items-center gap-1.5">
               <Paperclip className="w-3.5 h-3.5 text-[#0d9488]"/> Attachments
             </h3>
             <div className="text-center py-4">

@@ -9,6 +9,7 @@ import { SprintStatusBadge } from '../../components/common/Badges';
 import { ActivityFeed } from '../../components/common/ActivityFeed';
 import { EmptyState } from '../../components/common/EmptyState';
 import { formatDate } from '../../utils/dateUtils';
+import { getProjectStatusLabel } from '../../utils/roleUtils';
 import { getProjectUrl } from '../../utils/idUtils';
 export const PMDashboard = () => {
     const navigate = useNavigate();
@@ -85,7 +86,7 @@ export const PMDashboard = () => {
                       <p className="text-xs text-[#9ca3af] line-clamp-2 leading-relaxed">{project.description}</p>
                     </div>
                     <span className={`badge ml-3 flex-shrink-0 ${project.status === 'ACTIVE' ? 'badge-green' : 'badge-teal'} text-[11px]`}>
-                      {project.status}
+                      {getProjectStatusLabel(project.status)}
                     </span>
                   </div>
 
@@ -93,7 +94,7 @@ export const PMDashboard = () => {
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9]">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1">Current Stage</div>
+                      <div className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1">Current Stage</div>
                       <div className="text-xs font-bold text-[#1a1d23]">
                         {currentStage ? (<span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentStage.color }}/>
@@ -102,9 +103,9 @@ export const PMDashboard = () => {
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9]">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1">Task Velocity</div>
+                      <div className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1">Task Velocity</div>
                       <div className="text-xs font-bold text-[#1a1d23]">
-                        {doneTasks}/{projectTasks.length} completed
+                        {doneTasks}/{projectTasks.length} Completed
                       </div>
                     </div>
                   </div>
@@ -149,9 +150,9 @@ export const PMDashboard = () => {
                   </div>
                   <ProgressBar value={progress} color="#0d9488" showLabel className="mb-3"/>
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-[#059669] font-bold">{done} done</span>
-                    <span className="text-[#0d9488] font-bold">{inProg} in progress</span>
-                    <span className="text-[#9ca3af]">{sprintTasks.length - done - inProg} remaining</span>
+                    <span className="text-[#059669] font-bold">{done} Done</span>
+                    <span className="text-[#0d9488] font-bold">{inProg} In Progress</span>
+                    <span className="text-[#9ca3af]">{sprintTasks.length - done - inProg} Remaining</span>
                   </div>
                   <div className="mt-2 text-[11px] text-[#9ca3af]">
                     {formatDate(sprint.startDate)} → {formatDate(sprint.endDate)}
@@ -236,7 +237,7 @@ export const PMDashboard = () => {
             return (<div>
                 <div className="text-center mb-4">
                   <div className="text-3xl font-bold text-[#1a1d23]">{avgVelocity}</div>
-                  <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Avg Tasks/Iteration</div>
+                  <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Avg Tasks/Iteration</div>
                 </div>
                 <div className="space-y-3">
                   {velocityData.map((v, i) => (<div key={i} className="flex items-center gap-3">
@@ -272,7 +273,7 @@ export const PMDashboard = () => {
             <Layers className="w-4 h-4 text-[#8b5cf6]"/>
             Scenario Planning
           </h2>
-          <span className="text-[10px] text-[#9ca3af] font-semibold">{scenarios.length} scenarios</span>
+          <span className="text-[10px] text-[#9ca3af] font-semibold">{scenarios.length} Scenarios</span>
         </div>
         {scenarios.length === 0 ? (<div className="text-center py-6">
             <Layers className="w-8 h-8 text-[#e2e8f0] mx-auto mb-2"/>
@@ -320,7 +321,9 @@ export const PMDashboard = () => {
             }[health];
             return (<div key={project.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fafc] border border-[#f1f5f9]">
                   <span className="text-xs font-semibold text-[#1a1d23] truncate">{project.name}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${healthColor}`}>{health}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${healthColor}`}>
+                    {health === 'critical' ? 'Critical' : health === 'warning' ? 'Warning' : health === 'good' ? 'Good' : 'Fair'}
+                  </span>
                 </div>);
         })}
           </div>
@@ -347,7 +350,7 @@ export const PMDashboard = () => {
             });
             return Array.from(teamMap.values()).slice(0, 4).map((tm, i) => (<div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fafc] border border-[#f1f5f9]">
                   <span className="text-xs font-semibold text-[#1a1d23]">{tm.name}</span>
-                  <span className="text-[10px] text-[#9ca3af] font-medium">{tm.tasks} tasks · {tm.points} pts</span>
+                  <span className="text-[10px] text-[#9ca3af] font-medium">{tm.tasks} Tasks · {tm.points} Pts</span>
                 </div>));
         })()}
           </div>
@@ -404,7 +407,9 @@ export const PMDashboard = () => {
               {projectReleases.slice(0, 3).map((release) => (<div key={release.id} className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9]">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-[#1a1d23]">{release.name}</span>
-                    <span className={`badge text-[10px] ${release.status === 'IN_PROGRESS' ? 'badge-teal' : release.status === 'RELEASED' ? 'badge-green' : 'badge-gray'}`}>{release.status}</span>
+                    <span className={`badge text-[10px] ${release.status === 'IN_PROGRESS' ? 'badge-teal' : release.status === 'RELEASED' ? 'badge-green' : 'badge-gray'}`}>
+                      {release.status === 'IN_PROGRESS' ? 'In Progress' : release.status === 'RELEASED' ? 'Released' : release.status === 'PLANNING' ? 'Planning' : release.status === 'CANCELLED' ? 'Cancelled' : release.status}
+                    </span>
                   </div>
                   <div className="w-full bg-[#f1f5f9] rounded-full h-1.5 mb-1 overflow-hidden">
                     <div className="h-1.5 rounded-full" style={{ width: `${release.progress}%`, background: 'linear-gradient(90deg, #8b5cf6, #a855f7)' }}/>

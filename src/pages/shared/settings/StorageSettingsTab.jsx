@@ -111,7 +111,7 @@ export const StorageSettingsTab = () => {
       <div className="card p-6 bg-gradient-to-br from-slate-900 to-indigo-950 text-white shadow-md border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-bold tracking-wider mb-1">
               <Sparkles className="w-4 h-4"/>
               <span>Outcome-Based Pricing Model</span>
             </div>
@@ -124,7 +124,7 @@ export const StorageSettingsTab = () => {
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 px-3.5 py-2 rounded-xl text-center shrink-0">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Current Billing</span>
+            <span className="text-[10px] font-bold text-slate-400 block">Current Billing</span>
             <span className="text-sm font-bold text-emerald-400">Flat Organization Rate</span>
           </div>
         </div>
@@ -269,8 +269,8 @@ export const StorageSettingsTab = () => {
         <div className="p-4 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-slate-500"/>
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Member Storage Breakdown ({users.length} members)
+            <h4 className="text-xs font-bold text-slate-800 tracking-wider">
+              Member Storage Breakdown ({users.length} Members)
             </h4>
           </div>
           <span className="text-xs text-slate-500">
@@ -280,7 +280,7 @@ export const StorageSettingsTab = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-[10px] tracking-wider">
               <tr>
                 <th className="py-3 px-4">Member</th>
                 <th className="py-3 px-4">Role</th>

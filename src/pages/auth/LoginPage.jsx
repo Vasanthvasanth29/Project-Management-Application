@@ -219,7 +219,7 @@ export const LoginPage = () => {
             {/* Quick Demo Switcher */}
             <div className="mt-8 pt-6 border-t border-[#f1f5f9]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#9ca3af]">
+                <span className="text-xs font-bold tracking-wider text-[#9ca3af]">
                   Quick Demo Access (1-Click Login)
                 </span>
                 <span className="text-[10px] text-[#0d9488] font-semibold">Instant Access</span>

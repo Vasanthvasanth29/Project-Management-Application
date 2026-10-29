@@ -322,7 +322,7 @@ export const FlaggedTasksPage = () => {
           <div className="overflow-x-auto scrollbar-thin">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold text-[10px] tracking-wider">
                   <th className="py-2.5 px-3">Task</th>
                   <th className="py-2.5 px-2.5">Project</th>
                   <th className="py-2.5 px-3">Reference / Flag Reason</th>
@@ -477,7 +477,7 @@ export const FlaggedTasksPage = () => {
 
               {/* Candidates list */}
               <div className="mt-1.5">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <div className="text-[10px] font-bold text-slate-500 tracking-wider mb-1">
                   Select Task ({unflaggedCandidates.length} matches):
                 </div>
                 <div className="max-h-48 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1 bg-slate-50/50">

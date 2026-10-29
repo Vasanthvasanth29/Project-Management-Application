@@ -392,9 +392,9 @@ export const CreateProjectModal = ({ onClose }) => {
                 },
                 { label: 'Workflow', value: projectDefaults.workflow || '—' },
                 { label: 'Priority', value: projectDefaults.defaultPriority },
-                { label: 'Issue Types', value: `${projectDefaults.issueTypes.length} enabled` },
+                { label: 'Issue Types', value: `${projectDefaults.issueTypes.length} Enabled` },
             ].map((item) => (<div key={item.label} className="px-2.5 py-2 rounded-lg bg-white border border-[#ccfbf1] min-w-0">
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-teal-600">{item.label}</div>
+                  <div className="text-[9px] font-bold tracking-wider text-teal-600">{item.label}</div>
                   <div className="text-[11px] font-semibold text-slate-800 truncate" title={item.value}>
                     {item.value}
                   </div>

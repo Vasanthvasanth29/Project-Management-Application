@@ -155,40 +155,40 @@ export const BugsPage = () => {
                   {isExpanded && (<div className="px-4 pb-4 pl-12 space-y-3 animate-fade-in">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Severity</span>
+                          <span className="text-[10px] font-bold text-slate-500">Severity</span>
                           <div className="mt-0.5"><BugSeverityBadge severity={bug.severity}/></div>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Status</span>
+                          <span className="text-[10px] font-bold text-slate-500">Status</span>
                           <div className="mt-0.5"><BugStatusBadge status={bug.status}/></div>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Reported</span>
+                          <span className="text-[10px] font-bold text-slate-500">Reported</span>
                           <div className="mt-0.5 text-slate-700">{formatDate(bug.createdAt)}</div>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Last Updated</span>
+                          <span className="text-[10px] font-bold text-slate-500">Last Updated</span>
                           <div className="mt-0.5 text-slate-700">{formatTimeAgo(bug.updatedAt)}</div>
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Description</span>
+                        <span className="text-[10px] font-bold text-slate-500">Description</span>
                         <p className="text-xs text-slate-700 mt-1 leading-relaxed">{bug.description}</p>
                       </div>
 
                       {bug.steps && (<div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Steps to Reproduce</span>
+                          <span className="text-[10px] font-bold text-slate-500">Steps to Reproduce</span>
                           <p className="text-xs text-slate-700 mt-1 leading-relaxed whitespace-pre-wrap bg-slate-50 p-2.5 rounded-lg border border-slate-100">{bug.steps}</p>
                         </div>)}
 
                       {bug.expectedBehavior && (<div className="grid grid-cols-2 gap-3">
                           <div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Expected Result</span>
+                            <span className="text-[10px] font-bold text-slate-500">Expected Result</span>
                             <p className="text-xs text-slate-700 mt-1 bg-emerald-50 p-2.5 rounded-lg border border-emerald-100">{bug.expectedBehavior}</p>
                           </div>
                           {bug.actualBehavior && (<div>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">Actual Result</span>
+                              <span className="text-[10px] font-bold text-slate-500">Actual Result</span>
                               <p className="text-xs text-slate-700 mt-1 bg-red-50 p-2.5 rounded-lg border border-red-100">{bug.actualBehavior}</p>
                             </div>)}
                         </div>)}
@@ -200,7 +200,7 @@ export const BugsPage = () => {
                         </div>)}
 
                       {bug.attachments && bug.attachments.length > 0 && (<div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Attachments ({bug.attachments.length})</span>
+                          <span className="text-[10px] font-bold text-slate-500">Attachments ({bug.attachments.length})</span>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {bug.attachments.map((att) => (<span key={att.id} className="text-[10px] bg-slate-100 px-2 py-1 rounded-lg text-slate-600 flex items-center gap-1">
                                 <Paperclip className="w-3 h-3"/>{att.fileName}
@@ -213,7 +213,7 @@ export const BugsPage = () => {
                             if (bugFileRecords.length === 0)
                                 return null;
                             return (<div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">File Records ({bugFileRecords.length})</span>
+                            <span className="text-[10px] font-bold text-slate-500">File Records ({bugFileRecords.length})</span>
                             <div className="space-y-1.5 mt-1">
                               {bugFileRecords.map((fr) => {
                                     const category = getFileCategory(fr.mimeType);

@@ -17,7 +17,7 @@ export const DoThisFirst = ({ item, onAction }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Zap className="w-3.5 h-3.5" style={{ color: isCritical ? '#dc2626' : '#d97706' }}/>
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isCritical ? '#dc2626' : '#d97706' }}>
+            <span className="text-[10px] font-bold tracking-wider" style={{ color: isCritical ? '#dc2626' : '#d97706' }}>
               Do This First
             </span>
           </div>

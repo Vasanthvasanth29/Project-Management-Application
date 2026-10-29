@@ -328,7 +328,11 @@ export const CrossProjectRoadmap = () => {
                         : link.relationship === 'BLOCKS'
                             ? 'bg-rose-50 text-rose-800 border-rose-200'
                             : 'bg-indigo-50 text-indigo-800 border-indigo-200'}`}>
-                      {link.relationship.replace(/_/g, ' ')}
+                      {link.relationship === 'DEPENDS_ON'
+                        ? 'Depends On'
+                        : link.relationship === 'ALIGNED_WITH'
+                            ? 'Aligned With'
+                            : link.relationship.replace(/_/g, ' ')}
                     </span>
                   </div>
 
