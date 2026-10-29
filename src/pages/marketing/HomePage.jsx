@@ -4,6 +4,7 @@ import { ArrowRight, BarChart3, CalendarRange, CheckCircle2, KanbanSquare, Map, 
 import { ProductPreview } from './ProductPreview';
 import { ClickUpProductShowcase } from './ClickUpProductShowcase';
 import { AccessMock, BurndownMock, CapacityMock, ReleaseMock, RoadmapMock, WorkflowMock, } from './FeaturePreviews';
+import { WorkflowShowcase } from './WorkflowShowcase';
 import { ProductCapabilitiesHorizontalZigzag } from './ProductCapabilitiesHorizontalZigzag';
 import { RoadmapDeliverySection } from './RoadmapDeliverySection';
 import { MemberPricingSection } from './MemberPricing';
@@ -581,8 +582,8 @@ export const HomePage = () => {
               </Link>
             </div>
           </div>
-          <div>
-            <WorkflowMock />
+          <div className="w-full max-w-[720px] xl:ml-auto">
+            <WorkflowShowcase />
           </div>
         </div>
       </section>
