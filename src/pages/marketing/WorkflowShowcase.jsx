@@ -153,6 +153,8 @@ const LAYOUTS = {
         minWidth: 300,
         // Wider containers centre the portrait canvas instead of stretching it.
         maxWidth: 420,
+        // Keep the portrait canvas compact: the drawing scales down to fit.
+        maxHeight: 440,
     },
 };
 /* ------------------------------------------------------------------ */
@@ -747,7 +749,7 @@ export const WorkflowShowcase = ({ replaySignal = 0 }) => {
       </div>
 
       <div className="bg-[#f8fafc] overflow-x-auto">
-        <svg viewBox={`0 0 ${viewW} ${viewH}`} className="block w-full h-auto select-none" style={{ fontFamily: 'inherit', minWidth: layout.minWidth, maxWidth: layout.maxWidth, margin: '0 auto' }} role="group" aria-label="Workflow canvas. A multi-level workflow: START, Planning (with a Blocked loop), Development (branching to Code Review or Build Failed), Code Review (approved to Testing, or Changes Requested looping back to Development), Testing (to DONE, Security Review, or Bug Fix). Bug Fix and Re-test are added as a retry lane back to Development. A work item fails testing once, loops through the retry lane, then passes to DONE.">
+        <svg viewBox={`0 0 ${viewW} ${viewH}`} className="block w-full h-auto select-none" style={{ fontFamily: 'inherit', minWidth: layout.minWidth, maxWidth: layout.maxWidth, maxHeight: layout.maxHeight, margin: '0 auto' }} role="group" aria-label="Workflow canvas. A multi-level workflow: START, Planning (with a Blocked loop), Development (branching to Code Review or Build Failed), Code Review (approved to Testing, or Changes Requested looping back to Development), Testing (to DONE, Security Review, or Bug Fix). Bug Fix and Re-test are added as a retry lane back to Development. A work item fails testing once, loops through the retry lane, then passes to DONE.">
           <defs>
             <pattern id={`${uid}-dots`} width={18} height={18} patternUnits="userSpaceOnUse">
               <circle cx={1.5} cy={1.5} r={1.1} fill="#cbd3dd"/>
