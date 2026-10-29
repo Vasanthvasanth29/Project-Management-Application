@@ -4,16 +4,18 @@ import { Menu, X, ArrowRight, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { getDashboardPath } from '../../utils/roleUtils';
 import { site } from '../../config/siteConfig';
+import limberLitheMark from '../../assets/limber-lithe-mark.png';
+import limberLitheLogo from '../../assets/limber-lithe-logo.png';
 /** In-page destinations that exist on the home page today. */
 const PRODUCT_LINKS = [
-    { to: '/#product', label: 'Product overview' },
-    { to: '/#features', label: 'Capabilities' },
-    { to: '/#showcase', label: 'Roadmap & delivery' },
-    { to: '/#workflow', label: 'Workflow customization' },
-    { to: '/#access', label: 'Roles & access' },
+    { to: '/#product', label: 'Product Overview' },
+    { to: '/#product-capabilities', label: 'Product Capabilities' },
+    { to: '/#showcase', label: 'Roadmap & Delivery' },
+    { to: '/#workflow', label: 'Workflow Customization' },
+    { to: '/#access', label: 'Roles & Access' },
 ];
 const NAV_LINKS = [
-    { to: '/#features', label: 'Features' },
+    { to: '/#product-capabilities', label: 'Capabilities' },
     { to: '/pricing', label: 'Pricing' },
 ];
 /** Pages that exist today — only these are offered under Resources. */
@@ -25,23 +27,19 @@ const RESOURCE_LINKS = [
 ];
 const LEGAL_LINKS = RESOURCE_LINKS;
 /**
- * FlowExec brand mark — gradient diamond/spark identity.
- * Uses a teal→cyan gradient without copying any other brand.
+ * Limber Lithe Technologies Brand Mark — transparent upward-arrow logo mark.
  */
-export const BrandMark = ({ size = 'md' }) => {
-    const dim = size === 'sm' ? 'w-8 h-8 rounded-lg' : 'w-9 h-9 rounded-xl';
-    const iconDim = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-    return (<span className={`${dim} flex items-center justify-center flex-shrink-0`} style={{
-            background: 'linear-gradient(145deg, #0d9488, #0284c7)',
-            boxShadow: '0 2px 8px rgba(13,148,136,0.35)',
-        }} aria-hidden="true">
-      {/* Simple "L" mark made of two overlapping squares */}
-      <svg viewBox="0 0 20 20" className={`${iconDim} text-white`} fill="currentColor" aria-hidden="true">
-        <path d="M4 4h4v9h7v3H4V4z"/>
-      </svg>
-    </span>);
+export const BrandMark = ({ size = 'md', className = '' }) => {
+    const dim = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-11 h-11' : 'w-9 h-9';
+    return (
+        <img
+            src={limberLitheMark}
+            alt="Limber Lithe Technologies"
+            className={`${dim} object-contain flex-shrink-0 transition-transform group-hover:scale-105 ${className}`}
+        />
+    );
 };
-const DisclosureMenu = ({ label, id, items, active, open, onToggle, onClose, }) => {
+const DisclosureMenu = ({ label, id, items, active, open, onToggle, onClose, onItemClick }) => {
     const containerRef = useRef(null);
     useEffect(() => {
         if (!open)
@@ -70,7 +68,10 @@ const DisclosureMenu = ({ label, id, items, active, open, onToggle, onClose, }) 
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden="true"/>
       </button>
       {open && (<div id={id} className="absolute left-0 lg:left-1/2 lg:-translate-x-1/2 top-full mt-2 w-64 bg-white rounded-2xl border border-[#e2e5ea] shadow-fe-lg p-2 animate-fade-in z-50">
-          {items.map((item) => (<Link key={item.to} to={item.to} role="menuitem" className="block px-3 py-2.5 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f0fdfa] hover:text-[#0f766e] transition-colors" onClick={onClose}>
+          {items.map((item) => (<Link key={item.to} to={item.to} role="menuitem" className="block px-3 py-2.5 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f0fdfa] hover:text-[#0f766e] transition-colors" onClick={(e) => {
+              onClose();
+              if (onItemClick) onItemClick(e, item.to);
+          }}>
               {item.label}
             </Link>))}
         </div>)}
@@ -86,20 +87,64 @@ export const MarketingLayout = ({ children }) => {
     const [resourcesOpen, setResourcesOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { isAuthenticated, currentUser } = useAuthStore();
+
+    // Glitch-free smooth scroll to exact target position
+    const scrollToTarget = (targetHash) => {
+        if (!targetHash) return;
+        const hash = targetHash.replace('#', '');
+
+        // 1. If it's capabilities section, use GSAP ScrollTrigger start point if available
+        if (hash === 'product-capabilities' || hash === 'features') {
+            if (typeof window !== 'undefined' && window.ScrollTrigger) {
+                const st = window.ScrollTrigger.getById('capabilities-scroll');
+                if (st && typeof st.start === 'number') {
+                    window.scrollTo({ top: st.start, behavior: 'smooth' });
+                    return;
+                }
+            }
+        }
+
+        // 2. Otherwise calculate absolute page offset from top to avoid pin-spacer transformation jumps
+        const el = document.getElementById(hash);
+        if (el) {
+            const pinSpacer = el.closest('.pin-spacer');
+            const target = pinSpacer || el;
+            const top = target.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({
+                top: Math.max(0, top - 64),
+                behavior: 'smooth',
+            });
+        }
+    };
+
+    // Clean in-page click handler that prevents native browser anchor jump conflicts
+    const handleInPageClick = (e, to) => {
+        if (!to || !to.includes('#')) return;
+        const [targetPath, hash] = to.split('#');
+        const currentPath = location.pathname;
+        const isCurrentPage = currentPath === targetPath || (targetPath === '/' && (currentPath === '/' || currentPath === ''));
+
+        if (isCurrentPage && hash) {
+            e.preventDefault();
+            window.history.pushState(null, '', `#${hash}`);
+            scrollToTarget(hash);
+        }
+    };
+
     useEffect(() => {
         setMenuOpen(false);
         setProductOpen(false);
         setResourcesOpen(false);
         const hashId = location.hash.replace('#', '');
         if (hashId) {
-            const el = document.getElementById(hashId);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
-            }
+            const timer = setTimeout(() => {
+                scrollToTarget(hashId);
+            }, 150);
+            return () => clearTimeout(timer);
         }
         window.scrollTo({ top: 0 });
-    }, [location.pathname, location.hash]);
+    }, [location.pathname]);
+
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 8);
         onScroll();
@@ -111,7 +156,7 @@ export const MarketingLayout = ({ children }) => {
         const active = !link.to.includes('#') && location.pathname === link.to;
         return (<Link key={link.to} to={link.to} aria-current={active ? 'page' : undefined} className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-colors ${active
                 ? 'text-[#0f766e] bg-[#ccfbf1] font-semibold'
-                : 'text-[#4b5563] hover:text-[#0f766e] hover:bg-[#f0fdfa]'}`}>
+                : 'text-[#4b5563] hover:text-[#0f766e] hover:bg-[#f0fdfa]'}`} onClick={(e) => handleInPageClick(e, link.to)}>
         {link.label}
       </Link>);
     };
@@ -129,22 +174,22 @@ export const MarketingLayout = ({ children }) => {
           <Link to="/" className="flex items-center gap-2.5 min-w-0 group flex-shrink-0">
             <BrandMark />
             <span className="min-w-0">
-              <span className="block text-[17px] font-bold tracking-tight font-display leading-tight text-[#0a0f1e]">
+              <span className="block text-[17px] font-bold tracking-tight font-display leading-tight text-[#0a0f1e] group-hover:text-[#0d9488] transition-colors">
                 {site.name}
               </span>
-              <span className="hidden sm:block text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af] -mt-0.5">
-                Project Management
+              <span className="hidden sm:block text-[10px] font-bold uppercase tracking-wider text-[#0d9488] -mt-0.5">
+                Technologies
               </span>
             </span>
           </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {/* Product disclosure */}
-            <DisclosureMenu label="Product" id="marketing-product-menu" items={PRODUCT_LINKS} active={false} open={productOpen} onToggle={() => {
+            {/* Products disclosure */}
+            <DisclosureMenu label="Products" id="marketing-product-menu" items={PRODUCT_LINKS} active={false} open={productOpen} onToggle={() => {
             setProductOpen((o) => !o);
             setResourcesOpen(false);
-        }} onClose={() => setProductOpen(false)}/>
+        }} onClose={() => setProductOpen(false)} onItemClick={handleInPageClick}/>
 
             {NAV_LINKS.map((link) => renderNavLink(link))}
 
@@ -152,7 +197,7 @@ export const MarketingLayout = ({ children }) => {
             <DisclosureMenu label="Resources" id="marketing-resources-menu" items={RESOURCE_LINKS} active={RESOURCE_LINKS.some((link) => link.to === location.pathname)} open={resourcesOpen} onToggle={() => {
             setResourcesOpen((o) => !o);
             setProductOpen(false);
-        }} onClose={() => setResourcesOpen(false)}/>
+        }} onClose={() => setResourcesOpen(false)} onItemClick={handleInPageClick}/>
           </div>
 
           {/* Desktop auth CTAs */}
@@ -192,16 +237,22 @@ export const MarketingLayout = ({ children }) => {
               {NAV_LINKS.map((link) => renderNavLink(link))}
 
               <span className="px-3 py-1.5 mt-2 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
-                Product
+                Products
               </span>
-              {PRODUCT_LINKS.map((link) => (<Link key={link.to} to={link.to} className="pl-5 pr-3 py-2 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f1f5f9]" onClick={() => setMenuOpen(false)}>
+              {PRODUCT_LINKS.map((link) => (<Link key={link.to} to={link.to} className="pl-5 pr-3 py-2 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f1f5f9]" onClick={(e) => {
+                  setMenuOpen(false);
+                  handleInPageClick(e, link.to);
+                }}>
                   {link.label}
                 </Link>))}
 
               <span className="px-3 py-1.5 mt-2 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
                 Resources
               </span>
-              {RESOURCE_LINKS.map((link) => (<Link key={link.to} to={link.to} className="px-3 py-2.5 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f1f5f9]" onClick={() => setMenuOpen(false)}>
+              {RESOURCE_LINKS.map((link) => (<Link key={link.to} to={link.to} className="px-3 py-2.5 rounded-xl text-sm font-medium text-[#4b5563] hover:bg-[#f1f5f9]" onClick={(e) => {
+                  setMenuOpen(false);
+                  handleInPageClick(e, link.to);
+                }}>
                   {link.label}
                 </Link>))}
 
@@ -229,93 +280,250 @@ export const MarketingLayout = ({ children }) => {
       </main>
 
       {/* ============================================================ */}
-      {/* FOOTER                                                        */}
+      {/* HIGH-END TETR-STYLE FOOTER (ALIGNED TO WEBSITE BRAND THEME)   */}
       {/* ============================================================ */}
-      <footer className="border-t border-[#e2e5ea] bg-[#0a0f1e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-10">
-            {/* Brand column — spans 2 on lg */}
-            <div className="col-span-2 lg:col-span-2">
-              <div className="flex items-center gap-2.5">
-                <BrandMark size="sm"/>
-                <span className="text-base font-bold tracking-tight font-display text-white">{site.name}</span>
+      <footer className="relative bg-[#0a0f1e] text-white overflow-hidden border-t border-white/[0.08] selection:bg-teal-500 selection:text-white">
+        {/* Ambient Teal Glow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-96 opacity-60"
+          style={{
+            background:
+              'radial-gradient(ellipse 900px 320px at 50% -20%, rgba(13,148,136,0.22) 0%, rgba(6,182,212,0.12) 40%, transparent 75%)',
+          }}
+        />
+
+        {/* Top-Right Theme Accent Strip */}
+        <div className="absolute top-0 right-0 w-20 sm:w-28 h-1.5 bg-gradient-to-r from-teal-400 via-cyan-400 to-sky-400 shadow-[0_0_12px_rgba(45,212,191,0.6)]" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 pb-8">
+          
+          {/* ========================================================== */}
+          {/* TOP SECTION: LOGO + 4 LINK COLUMNS + AWARD & SOCIALS       */}
+          {/* ========================================================== */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 items-start">
+            
+            {/* 1. LEFT BRAND COLUMN (Logo Box + Cyan/Teal Brand CTA) */}
+            <div className="lg:col-span-4 flex flex-col items-start">
+              {/* White/Dark Glass Logo Card */}
+              <Link to="/" className="inline-flex items-center gap-2.5 px-3.5 py-2 bg-white rounded-xl shadow-lg border border-slate-200 group hover:shadow-teal-500/10 transition-shadow">
+                <img
+                  src={limberLitheMark}
+                  alt="Limber Lithe"
+                  className="w-8 h-8 object-contain flex-shrink-0 group-hover:scale-105 transition-transform"
+                />
+                <div className="leading-tight">
+                  <span className="block text-xs font-black text-slate-900 tracking-tight font-display">
+                    LIMBER LITHE
+                  </span>
+                  <span className="block text-[8px] font-bold uppercase tracking-wider text-teal-700">
+                    TECHNOLOGIES
+                  </span>
+                </div>
+              </Link>
+
+              {/* Theme Brand Gradient CTA Button */}
+              <Link
+                to="/register"
+                className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-lg shadow-teal-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
+                }}
+              >
+                <span>GET STARTED NOW</span>
+                <span className="text-sm font-black">↗</span>
+              </Link>
+            </div>
+
+            {/* 2. MIDDLE FOUR LINK COLUMNS */}
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-xs sm:text-[13px]">
+              {/* Column A: Product */}
+              <div className="space-y-2.5">
+                <Link
+                  to="/#product"
+                  onClick={(e) => handleInPageClick(e, '/#product')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Overview
+                </Link>
+                <Link
+                  to="/#product-capabilities"
+                  onClick={(e) => handleInPageClick(e, '/#product-capabilities')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Capabilities
+                </Link>
+                <Link
+                  to="/#showcase"
+                  onClick={(e) => handleInPageClick(e, '/#showcase')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Roadmap
+                </Link>
+                <Link
+                  to="/#workflow"
+                  onClick={(e) => handleInPageClick(e, '/#workflow')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Workflows
+                </Link>
               </div>
-              <p className="mt-4 text-sm text-slate-400 leading-relaxed max-w-xs">
-                {site.description}
+
+              {/* Column B: Platform */}
+              <div className="space-y-2.5">
+                <Link
+                  to="/#product-capabilities"
+                  onClick={(e) => handleInPageClick(e, '/#product-capabilities')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Kanban
+                </Link>
+                <Link
+                  to="/#access"
+                  onClick={(e) => handleInPageClick(e, '/#access')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Permissions
+                </Link>
+                <Link
+                  to="/#showcase"
+                  onClick={(e) => handleInPageClick(e, '/#showcase')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Burndown
+                </Link>
+                <Link
+                  to="/#showcase"
+                  onClick={(e) => handleInPageClick(e, '/#showcase')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Releases
+                </Link>
+              </div>
+
+              {/* Column C: Resources */}
+              <div className="space-y-2.5">
+                <Link
+                  to="/pricing"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Pricing
+                </Link>
+                <Link
+                  to="/#access"
+                  onClick={(e) => handleInPageClick(e, '/#access')}
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  SSO &amp; SAML
+                </Link>
+                <Link
+                  to="/terms"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Audit Logs
+                </Link>
+                <Link
+                  to="/privacy"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Compliance
+                </Link>
+              </div>
+
+              {/* Column D: Company */}
+              <div className="space-y-2.5">
+                <Link
+                  to="/contact"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Contact Us
+                </Link>
+                <Link
+                  to="/login"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Member App
+                </Link>
+                <Link
+                  to="/register"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Free Trial
+                </Link>
+                <Link
+                  to="/checkout"
+                  className="block text-slate-300 hover:text-[#5eead4] font-medium transition-colors"
+                >
+                  Checkout
+                </Link>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Center subtitle note above multi-colored divider line */}
+          <div className="text-center mt-8 mb-4">
+            <span className="text-[11px] text-slate-400 font-medium tracking-wide">
+              Enterprise Agile Engine &amp; Continuous Delivery Platform
+            </span>
+          </div>
+
+          {/* ========================================================== */}
+          {/* MULTI-COLORED SEGMENTED DIVIDER BAR (From TETR Screenshot) */}
+          {/* ========================================================== */}
+          <div className="w-full h-[3px] flex items-center gap-1.5 my-4 overflow-hidden rounded-full">
+            <div className="h-full flex-1 bg-[#a855f7]" /> {/* Violet */}
+            <div className="h-full flex-1 bg-[#e2e8f0]" /> {/* White/Silver */}
+            <div className="h-full flex-1 bg-[#06b6d4]" /> {/* Cyan */}
+            <div className="h-full flex-1 bg-[#0d9488]" /> {/* Teal */}
+            <div className="h-full flex-1 bg-[#22c55e]" /> {/* Green */}
+            <div className="h-full flex-1 bg-[#f59e0b]" /> {/* Amber/Gold */}
+            <div className="h-full flex-1 bg-[#ec4899]" /> {/* Pink */}
+            <div className="h-full flex-1 bg-[#38bdf8]" /> {/* Sky Blue */}
+            <div className="h-full flex-1 bg-white" />     {/* Pure White */}
+            <div className="h-full flex-1 bg-[#10b981]" /> {/* Emerald */}
+          </div>
+
+          {/* ========================================================== */}
+          {/* BOTTOM SECTION: LEGAL LINKS + DISCLAIMER + CIRCULAR STAMP  */}
+          {/* ========================================================== */}
+          <div className="pt-2">
+            {/* Centered Uppercase Legal Navigation */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-bold tracking-wider uppercase text-slate-300">
+              <Link to="/contact" className="hover:text-[#5eead4] transition-colors">
+                CONTACT US
+              </Link>
+              <Link to="/refunds" className="hover:text-[#5eead4] transition-colors">
+                REFUND POLICY
+              </Link>
+              <Link to="/privacy" className="hover:text-[#5eead4] transition-colors">
+                PRIVACY POLICY
+              </Link>
+              <Link to="/terms" className="hover:text-[#5eead4] transition-colors">
+                TERMS &amp; CONDITIONS
+              </Link>
+              <Link to="/privacy" className="hover:text-[#5eead4] transition-colors">
+                COOKIE SETTINGS
+              </Link>
+            </div>
+
+            {/* Bottom Disclaimer + Copyright + Circular Stamp Badge */}
+            <div className="mt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-400">
+              <p className="text-center md:text-left leading-relaxed max-w-4xl">
+                * Limber Lithe Technologies reserves the right to adjust platform specifications in accordance with cloud compliance and SOC 2 standards. Participants and enterprise teams will be notified accordingly. Copyright © {new Date().getFullYear()} Limber Lithe Technologies. All rights reserved.
               </p>
-              <p className="mt-3 text-xs text-slate-500">{site.tagline}.</p>
-            </div>
 
-            {/* Product column */}
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-                Product
-              </h2>
-              <ul className="space-y-3 text-sm">
-                {PRODUCT_LINKS.map((link) => (<li key={link.to}>
-                    <Link to={link.to} className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>))}
-                <li>
-                  <Link to="/pricing" className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Account column */}
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-                Account
-              </h2>
-              <ul className="space-y-3 text-sm">
-                <li>
-                  <Link to="/login" className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                    Log in
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/register" className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                    Get started
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/checkout" className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                    Checkout
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Legal & support column */}
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-                Legal &amp; support
-              </h2>
-              <ul className="space-y-3 text-sm">
-                {LEGAL_LINKS.map((link) => (<li key={link.to}>
-                    <Link to={link.to} className="text-slate-400 hover:text-[#5eead4] transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>))}
-              </ul>
+              {/* Circular Brand Seal Badge from Screenshot (aligned to brand theme) */}
+              <div className="w-10 h-10 rounded-full border-2 border-teal-500/50 bg-[#0f172a] flex items-center justify-center shadow-lg shadow-teal-950/60 flex-shrink-0 group hover:border-cyan-400 transition-colors">
+                <img
+                  src={limberLitheMark}
+                  alt="Limber Lithe"
+                  className="w-5 h-5 object-contain"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer bottom bar */}
-        <div className="border-t border-white/[0.07]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-500">
-            <p>
-              © {new Date().getFullYear()} {site.name}. All rights reserved.
-            </p>
-            <p className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" aria-hidden="true"/>
-              Enterprise sign-in with Microsoft Entra ID supported
-            </p>
-          </div>
         </div>
       </footer>
     </div>);

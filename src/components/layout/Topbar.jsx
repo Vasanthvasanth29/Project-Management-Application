@@ -140,11 +140,9 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
         </button>
 
         <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate(getDashboardPath(currentUser.role))}>
-          {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title={branding.name} className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform border border-[#e2e5ea]"/>) : (<div className="w-8 h-8 rounded-lg shadow-sm flex items-center justify-center flex-shrink-0 text-white group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(135deg, #0d9488, #06b6d4)' }}>
-              <Layers className="w-4 h-4 text-white"/>
-            </div>)}
+          {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title={branding.name} className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform border border-[#e2e5ea]"/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" className="w-8 h-8 object-contain flex-shrink-0 group-hover:scale-105 transition-transform" />)}
           <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-[#1a1d23] text-base tracking-tight font-display">FlowExec</span>
+            <span className="font-bold text-[#1a1d23] text-base tracking-tight font-display">Limber Lithe</span>
             <span className="text-[10px] font-semibold text-[#0d9488] bg-[#ccfbf1] px-1.5 py-0.5 rounded-md hidden sm:inline-block">
               Enterprise
             </span>
@@ -198,7 +196,7 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
 
           {showAppLauncher && (<div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white border border-[#e0e2ec] rounded-3xl shadow-modal z-50 p-4 animate-scale-in">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#f1f3f4] px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#444746]">FlowExec Platform Suite</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#444746]">Limber Lithe Platform Suite</span>
                 <span className="text-[10px] text-[#0d9488] bg-[#ccfbf1] px-2 py-0.5 rounded-full font-semibold">Apps Suite</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -317,7 +315,7 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 text-rose-600"/>
-                Sign Out of FlowExec
+                Sign Out of Limber Lithe
               </button>
             </div>
           </div>)}
