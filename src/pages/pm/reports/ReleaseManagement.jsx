@@ -81,7 +81,7 @@ export const ReleaseManagement = ({ projectId }) => {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-bold text-[#1a1d23]">{release.name}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-                        {release.status.replace(/_/g, ' ')}
+                        {release.status === 'IN_PROGRESS' ? 'In Progress' : release.status === 'RELEASED' ? 'Released' : release.status === 'PLANNING' ? 'Planning' : release.status === 'CANCELLED' ? 'Cancelled' : release.status}
                       </span>
                     </div>
                     <div className="text-xs text-[#9ca3af]">v{release.version}</div>
@@ -89,7 +89,7 @@ export const ReleaseManagement = ({ projectId }) => {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-[#1a1d23]">{progressPct}%</div>
-                    <div className="text-[10px] text-[#9ca3af]">{doneTasks}/{releaseTasks.length} done</div>
+                    <div className="text-[10px] text-[#9ca3af]">{doneTasks}/{releaseTasks.length} Done</div>
                 </div>
 
                 {/* Actions */}
@@ -131,7 +131,7 @@ export const ReleaseManagement = ({ projectId }) => {
                     <span className={`px-2 py-0.5 rounded-lg font-bold ${isReady ? 'bg-[#10b981]/10 text-[#10b981]' :
                         isNearReady ? 'bg-[#f59e0b]/10 text-[#f59e0b]' :
                             'bg-[#9ca3af]/10 text-[#9ca3af]'}`}>
-                      {isReady ? 'READY FOR DELIVERY' : isNearReady ? 'NEAR READY' : 'IN PROGRESS'}
+                      {isReady ? 'Ready For Delivery' : isNearReady ? 'Near Ready' : 'In Progress'}
                     </span>
                   </div>
                   <span className="text-[#9ca3af]">

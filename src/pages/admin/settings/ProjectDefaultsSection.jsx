@@ -115,9 +115,9 @@ export const ProjectDefaultsSection = () => {
             { label: 'Template', value: TEMPLATE_OPTIONS.find((t) => t.value === value.template)?.label || value.template },
             { label: 'Workflow', value: value.workflow || '—' },
             { label: 'Priority', value: priorities.find((p) => p.key === value.defaultPriority)?.label || value.defaultPriority },
-            { label: 'Issue Types', value: `${value.issueTypes.length} selected` },
+            { label: 'Issue Types', value: `${value.issueTypes.length} Selected` },
         ].map((s) => (<div key={s.label} className="px-3 py-2.5 rounded-xl bg-white border border-[#ccfbf1]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-teal-600">{s.label}</div>
+              <div className="text-[10px] font-bold tracking-wider text-teal-600">{s.label}</div>
               <div className="text-xs font-semibold text-slate-800 mt-0.5 truncate" title={s.value}>{s.value}</div>
             </div>))}
         </div>

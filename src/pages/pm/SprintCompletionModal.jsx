@@ -95,7 +95,7 @@ export const SprintCompletionModal = ({ sprint, isOpen, onClose, onComplete, }) 
             <div className="bg-blue-50 rounded-xl p-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <Target className="w-3.5 h-3.5 text-blue-600"/>
-                <span className="text-[10px] font-bold text-blue-700 uppercase">Story Points</span>
+                <span className="text-[10px] font-bold text-blue-700">Story Points</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-blue-900">{completedPoints}/{totalPoints}</span>
@@ -105,11 +105,11 @@ export const SprintCompletionModal = ({ sprint, isOpen, onClose, onComplete, }) 
             <div className="bg-purple-50 rounded-xl p-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <Clock className="w-3.5 h-3.5 text-purple-600"/>
-                <span className="text-[10px] font-bold text-purple-700 uppercase">Hours</span>
+                <span className="text-[10px] font-bold text-purple-700">Hours</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-purple-900">{loggedHours}h/{totalHours}h</span>
-                <span className="text-[10px] text-purple-600">{totalHours > 0 ? Math.round((loggedHours / totalHours) * 100) : 0}% used</span>
+                <span className="text-[10px] text-purple-600">{totalHours > 0 ? Math.round((loggedHours / totalHours) * 100) : 0}% Used</span>
               </div>
             </div>
           </div>

@@ -34,11 +34,11 @@ export const ProjectOutlook = ({ outlook, reason, signalCount }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-bold text-[#1a1d23]">Project Outlook</h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ color: config.color, backgroundColor: config.bg }}>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide" style={{ color: config.color, backgroundColor: config.bg }}>
               {config.label}
             </span>
             <span className="text-[10px] text-[#9ca3af]">
-              {signalCount} predictive signal{signalCount !== 1 ? 's' : ''}
+              {signalCount} Predictive Signal{signalCount !== 1 ? 's' : ''}
             </span>
           </div>
           <p className="text-[11px] text-[#4b5563] leading-relaxed">{reason}</p>

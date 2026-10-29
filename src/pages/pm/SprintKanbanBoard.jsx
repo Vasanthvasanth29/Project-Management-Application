@@ -494,7 +494,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
               <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b-2 border-slate-200 flex-shrink-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLUMN_DOTS[col.key]}`}/>
-                  <h4 className="text-xs font-bold text-[#1f1f1f] tracking-wide uppercase">{col.label}</h4>
+                  <h4 className="text-xs font-bold text-[#1f1f1f] tracking-wide">{col.label}</h4>
                 </div>
                 <span data-column-count={colTasks.length} className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
                   {colTasks.length}
@@ -513,11 +513,11 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                             : zone === 'CANCELLED'
                                 ? 'border-slate-300 bg-slate-50'
                                 : 'border-emerald-300 bg-emerald-50'}`}>
-                        <div className={`text-[10px] font-black uppercase tracking-wider ${zone === 'CANCELLED' ? 'text-slate-500' : 'text-emerald-700'}`}>
+                        <div className={`text-[10px] font-black tracking-wider ${zone === 'CANCELLED' ? 'text-slate-500' : 'text-emerald-700'}`}>
                           {zone === 'CANCELLED' ? 'Cancelled' : 'Done'}
                         </div>
-                        <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-0.5">
-                          Drop here
+                        <div className="text-[9px] font-black tracking-wider text-slate-400 mt-0.5">
+                          Drop Here
                         </div>
                       </div>))}
                   </div>)}
@@ -616,8 +616,8 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-[#1a73e8]"/>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">New status</span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${getStatusColor(columnToStatus(pendingTransition.to))}`}>
+                <span className="text-[10px] font-bold tracking-wider text-slate-400">New status</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wide ${getStatusColor(columnToStatus(pendingTransition.to))}`}>
                   {getStatusLabel(columnToStatus(pendingTransition.to))}
                 </span>
               </div>

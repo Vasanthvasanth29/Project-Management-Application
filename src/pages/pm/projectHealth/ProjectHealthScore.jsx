@@ -37,7 +37,7 @@ export const ProjectHealthScore = ({ score, status, trend, mainReasons, positive
         {mainReasons.length > 0 && (<div>
             <div className="flex items-center gap-1 mb-1">
               <AlertTriangle className="w-3 h-3 text-[#d97706]"/>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[#d97706]">Needs Attention</span>
+              <span className="text-[9px] font-bold tracking-wider text-[#d97706]">Needs Attention</span>
             </div>
             {mainReasons.map(f => (<div key={f.id} className="flex items-center gap-2 py-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#d97706]"/>
@@ -50,7 +50,7 @@ export const ProjectHealthScore = ({ score, status, trend, mainReasons, positive
         {positiveSignals.length > 0 && (<div>
             <div className="flex items-center gap-1 mb-1">
               <CheckCircle className="w-3 h-3 text-[#059669]"/>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[#059669]">Positive Signals</span>
+              <span className="text-[9px] font-bold tracking-wider text-[#059669]">Positive Signals</span>
             </div>
             {positiveSignals.map(f => (<div key={f.id} className="flex items-center gap-2 py-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#059669]"/>

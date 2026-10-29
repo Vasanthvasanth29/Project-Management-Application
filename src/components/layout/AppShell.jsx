@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { ArrowUp, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { SIDEBAR_DEFAULT_WIDTH, SIDEBAR_ICON_ONLY_BELOW, SIDEBAR_MIN_WIDTH, clampSidebarWidth, readSidebarWidth, storeSidebarWidth, } from './sidebarWidth';
@@ -81,7 +81,6 @@ export const AppShell = () => {
             mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
         }
         window.scrollTo({ top: 0, behavior: 'instant' });
-        setShowScrollTop(false);
     }, [location.pathname]);
     // Floating "Top" button: shown once the page scroller (`main`, or the
     // window as a fallback) has scrolled past 180px.
@@ -117,17 +116,11 @@ export const AppShell = () => {
         {!showTopbar && (<button type="button" className="lg:hidden fixed top-3 left-3 z-30 p-2 rounded-xl bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 text-slate-600 hover:text-slate-900 cursor-pointer" onClick={() => setSidebarOpen(true)} aria-label="Open mobile menu">
             <Menu className="w-5 h-5"/>
           </button>)}
-        <main ref={mainRef} onScroll={handleScroll} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-thin relative z-0 scroll-smooth">
+        <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-thin relative z-0 scroll-smooth">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 animate-fade-in">
             <Outlet />
           </div>
         </main>
       </div>
-
-      {/* Floating Scroll to Top Button */}
-      {showScrollTop && (<button type="button" onClick={scrollToTop} className="fixed bottom-20 right-6 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-semibold shadow-xl hover:shadow-2xl border border-slate-700/60 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 active:translate-y-0 group cursor-pointer animate-fade-in" title="Scroll back to top" aria-label="Scroll back to top">
-          <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 text-teal-400"/>
-          <span className="hidden sm:inline">Top</span>
-        </button>)}
     </div>);
 };

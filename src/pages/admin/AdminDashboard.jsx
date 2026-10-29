@@ -10,6 +10,7 @@ import { RoleBadge } from '../../components/common/Badges';
 import { Avatar } from '../../components/common/Avatar';
 import { ActivityFeed } from '../../components/common/ActivityFeed';
 import { formatDate, isOverdue } from '../../utils/dateUtils';
+import { getProjectStatusLabel } from '../../utils/roleUtils';
 import { getProjectUrl } from '../../utils/idUtils';
 import { CreateUserModal } from './CreateUserModal';
 import { CreateProjectModal } from './CreateProjectModal';
@@ -110,9 +111,9 @@ export const AdminDashboard = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value={users.length} icon={Users} iconColor="#0d9488" iconBg="#ccfbf1" trend={activeUsers.length} trendLabel="active users"/>
+        <StatCard title="Total Users" value={users.length} icon={Users} iconColor="#0d9488" iconBg="#ccfbf1" trend={activeUsers.length} trendLabel="Active Users"/>
         <StatCard title="Active Projects" value={activeProjects.length} icon={FolderKanban} iconColor="#6366f1" iconBg="#e0e7ff" badge="Active" badgeColor="badge-green"/>
-        <StatCard title="Total Tasks" value={tasks.length} icon={CheckSquare} iconColor="#06b6d4" iconBg="#cffafe" trend={completedTasks} trendLabel="completed"/>
+        <StatCard title="Total Tasks" value={tasks.length} icon={CheckSquare} iconColor="#06b6d4" iconBg="#cffafe" trend={completedTasks} trendLabel="Completed"/>
         <StatCard title="Pending Invites" value={pendingInvitations.length} icon={Mail} iconColor="#f59e0b" iconBg="#fef3c7" badge={pendingInvitations.length > 0 ? 'Needs Attention' : undefined} badgeColor="badge-amber"/>
       </div>
 
@@ -137,40 +138,40 @@ export const AdminDashboard = () => {
             <div className="w-8 h-8 rounded-lg bg-[#d1fae5] flex items-center justify-center">
               <CheckCircle className="w-4 h-4 text-[#10b981]"/>
             </div>
-            <span className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider">Completed</span>
+            <span className="text-[11px] font-bold text-[#9ca3af] tracking-wider">Completed</span>
           </div>
           <div className="text-2xl font-bold text-[#059669] font-display">{completedTasks}</div>
-          <div className="text-[10px] text-[#9ca3af] mt-1">tasks done</div>
+          <div className="text-[10px] text-[#9ca3af] mt-1">Tasks Done</div>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-[#ccfbf1] flex items-center justify-center">
               <Clock className="w-4 h-4 text-[#0d9488]"/>
             </div>
-            <span className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider">Open</span>
+            <span className="text-[11px] font-bold text-[#9ca3af] tracking-wider">Open</span>
           </div>
           <div className="text-2xl font-bold text-[#0d9488] font-display">{openTasks}</div>
-          <div className="text-[10px] text-[#9ca3af] mt-1">tasks in progress</div>
+          <div className="text-[10px] text-[#9ca3af] mt-1">Tasks In Progress</div>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-[#fee2e2] flex items-center justify-center">
               <AlertTriangle className="w-4 h-4 text-[#ef4444]"/>
             </div>
-            <span className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider">Overdue</span>
+            <span className="text-[11px] font-bold text-[#9ca3af] tracking-wider">Overdue</span>
           </div>
           <div className="text-2xl font-bold text-[#dc2626] font-display">{overdueTasks}</div>
-          <div className="text-[10px] text-[#9ca3af] mt-1">tasks overdue</div>
+          <div className="text-[10px] text-[#9ca3af] mt-1">Tasks Overdue</div>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-[#fef3c7] flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-[#f59e0b]"/>
             </div>
-            <span className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider">Avg Progress</span>
+            <span className="text-[11px] font-bold text-[#9ca3af] tracking-wider">Avg Progress</span>
           </div>
           <div className="text-2xl font-bold text-[#d97706] font-display">{avgProjectProgress}%</div>
-          <div className="text-[10px] text-[#9ca3af] mt-1">across projects</div>
+          <div className="text-[10px] text-[#9ca3af] mt-1">Across Projects</div>
         </div>
       </div>
 
@@ -201,7 +202,7 @@ export const AdminDashboard = () => {
                           Overdue
                         </span>)}
                       <span className={`badge ${project.status === 'ACTIVE' ? 'badge-green' : project.status === 'PLANNING' ? 'badge-teal' : 'badge-gray'} text-[11px]`}>
-                        {project.status}
+                        {getProjectStatusLabel(project.status)}
                       </span>
                     </div>
                   </div>
@@ -225,14 +226,14 @@ export const AdminDashboard = () => {
                     <div className="text-[11px] font-bold text-[#4b5563] flex-shrink-0">
                       <span className="text-[#059669]">{doneTasks}</span>
                       <span className="text-[#e2e8f0]"> / </span>
-                      <span>{totalTasks} tasks</span>
+                      <span>{totalTasks} Tasks</span>
                     </div>
                   </div>
 
                   {activeSprint && (<div className="flex items-center gap-1.5 text-[10px] text-[#9ca3af] mt-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"/>
                       <span className="font-semibold">{activeSprint.name}</span>
-                      <span>active</span>
+                      <span>Active</span>
                     </div>)}
 
                   <div className="flex items-center justify-end mt-2 pt-2 border-t border-[#f1f5f9]">

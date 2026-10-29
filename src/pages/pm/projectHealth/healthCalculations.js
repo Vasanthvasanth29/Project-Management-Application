@@ -836,6 +836,7 @@ export function computeBottlenecks(tasks) {
         RETEST: 'Retest',
         BLOCKED: 'Blocked',
         DONE: 'Done',
+        CANCELLED: 'Cancelled',
     };
     return Object.entries(stageGroups)
         .map(([stage, stageTasks]) => {

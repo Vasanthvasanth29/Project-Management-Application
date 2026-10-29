@@ -165,7 +165,7 @@ export const KanbanBoard = ({ projectId, taskIds }) => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${col.dotColor}`}/>
-                    <h3 className="text-xs font-bold text-[#1a1d23] uppercase tracking-wider">{col.label}</h3>
+                    <h3 className="text-xs font-bold text-[#1a1d23] tracking-wider">{col.label}</h3>
                   </div>
                   <div className="flex items-center gap-2">
                     {col.wipLimit && (<span className={`text-[9px] font-bold ${isOverWip ? 'text-red-600' : 'text-slate-400'}`}>
@@ -248,12 +248,12 @@ export const KanbanBoard = ({ projectId, taskIds }) => {
 
                         <div className="flex items-center justify-between pt-2.5 border-t border-[#f1f3f4] text-[11px]">
                           <div className="flex items-center gap-1.5">
-                            {isCancelled ? (<span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 text-[9px] font-bold uppercase tracking-wide">
+                            {isCancelled ? (<span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 text-[9px] font-bold tracking-wide">
                                 Cancelled
                               </span>) : (<span className={`px-2 py-0.5 rounded-md font-medium text-[10px] ${getDueDateClass(task.dueDate)}`}>
                                 {getDueDateLabel(task.dueDate)}
                               </span>)}
-                            {isOverdue && (<span className="text-[9px] text-[#ef4444] font-bold">OVERDUE</span>)}
+                            {isOverdue && (<span className="text-[9px] text-[#ef4444] font-bold">Overdue</span>)}
                           </div>
                           {assignee && (<div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-[#9ca3af] truncate max-w-[80px]">{assignee.name.split(' ')[0]}</span>

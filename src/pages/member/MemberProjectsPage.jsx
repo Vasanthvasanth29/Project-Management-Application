@@ -8,6 +8,7 @@ import { Avatar } from '../../components/common/Avatar';
 import { EmptyState } from '../../components/common/EmptyState';
 import { formatDate } from '../../utils/dateUtils';
 import { getProjectUrl } from '../../utils/idUtils';
+import { getProjectStatusLabel } from '../../utils/roleUtils';
 export const MemberProjectsPage = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuthStore();
@@ -78,7 +79,7 @@ export const MemberProjectsPage = () => {
                     <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex-shrink-0 ${project.status === 'ACTIVE'
                         ? 'bg-[#e6f4ea] text-[#137333] border border-[#ceead6]'
                         : 'bg-[#e8f0fe] text-[#1a73e8] border border-[#c2e7ff]'}`}>
-                      {project.status}
+                      {getProjectStatusLabel(project.status)}
                     </span>
                   </div>
 
@@ -94,7 +95,7 @@ export const MemberProjectsPage = () => {
                   {/* Stage & Member Task Metric Pills */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="p-3 rounded-2xl bg-[#f8fafd] border border-[#e0e2ec]">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#747775] mb-1">
+                      <div className="text-[10px] font-bold tracking-wider text-[#747775] mb-1">
                         Current Stage
                       </div>
                       <div className="text-xs font-bold text-[#1f1f1f] truncate">
@@ -106,13 +107,13 @@ export const MemberProjectsPage = () => {
                     </div>
 
                     <div className="p-3 rounded-2xl bg-[#e8f0fe] border border-[#c2e7ff]">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#0b57d0] mb-1">
+                      <div className="text-[10px] font-bold tracking-wider text-[#0b57d0] mb-1">
                         Your Tasks
                       </div>
                       <div className="text-xs font-bold text-[#1a73e8] flex items-center gap-1">
                         <CheckSquare className="w-3.5 h-3.5"/>
                         <span>
-                          {myCompletedTasks.length}/{myProjectTasks.length} done
+                          {myCompletedTasks.length}/{myProjectTasks.length} Done
                         </span>
                       </div>
                     </div>

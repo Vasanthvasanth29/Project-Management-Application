@@ -66,7 +66,7 @@ export const SSOSettingsTab = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-              <div className="text-[11px] text-blue-200 uppercase font-semibold">SSO Status</div>
+              <div className="text-[11px] text-blue-200 font-semibold">SSO Status</div>
               <div className="text-sm font-bold text-white mt-0.5 flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${settings.enforceSSO ? 'bg-emerald-400' : 'bg-amber-400'}`}/>
                 {settings.enforceSSO ? 'Enforced' : 'Optional (Fallback)'}
@@ -74,21 +74,21 @@ export const SSOSettingsTab = () => {
             </div>
 
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-              <div className="text-[11px] text-blue-200 uppercase font-semibold">Active IdPs</div>
+              <div className="text-[11px] text-blue-200 font-semibold">Active IdPs</div>
               <div className="text-sm font-bold text-white mt-0.5">
                 {Object.values(settings.providers).filter((p) => p.enabled).length} Configured
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-              <div className="text-[11px] text-blue-200 uppercase font-semibold">JIT Provisioning</div>
+              <div className="text-[11px] text-blue-200 font-semibold">JIT Provisioning</div>
               <div className="text-sm font-bold text-white mt-0.5">
                 {settings.jitProvisioningEnabled ? 'Enabled' : 'Disabled'}
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10">
-              <div className="text-[11px] text-blue-200 uppercase font-semibold">Managed Domains</div>
+              <div className="text-[11px] text-blue-200 font-semibold">Managed Domains</div>
               <div className="text-sm font-bold text-white mt-0.5">
                 {settings.enforcedDomains.length} Verified
               </div>

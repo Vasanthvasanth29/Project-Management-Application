@@ -38,29 +38,29 @@ const ACTIVITY_TABS = [
 ];
 // Status badge text, exactly as the board columns spell them (TO DO / IN REVIEW ...).
 const STATUS_BADGE_LABEL = {
-    TODO: 'TO DO',
-    IN_PROGRESS: 'IN PROGRESS',
-    IN_REVIEW: 'IN REVIEW',
-    TESTING: 'TESTING',
-    BUG_FIX: 'BUG FIX',
-    RETEST: 'RE-TEST',
-    BLOCKED: 'BLOCKED',
-    DONE: 'DONE',
-    CANCELLED: 'CANCELLED',
-    'IN TEAM BACKLOG': 'IN TEAM BACKLOG',
-    IMPLEMENT: 'IMPLEMENT',
-    FUNNEL: 'FUNNEL',
-    BACKLOG: 'BACKLOG',
-    ASSESSMENT: 'ASSESSMENT',
-    ON_BOARD: 'ON BOARD',
-    READY_FOR_DEVELOPMENT: 'READY FOR DEVELOPMENT',
-    IN_DEVELOPMENT: 'IN DEVELOPMENT',
-    ON_HOLD: 'ON HOLD',
-    DEVELOPMENT_COMPLETE: 'DEVELOPMENT COMPLETE',
-    READY_FOR_DEPLOYMENT: 'READY FOR DEPLOYMENT',
-    DEPLOYMENT: 'DEPLOYMENT',
-    VALIDATION: 'VALIDATION',
-    COMPLETED: 'COMPLETED',
+    TODO: 'To Do',
+    IN_PROGRESS: 'In Progress',
+    IN_REVIEW: 'In Review',
+    TESTING: 'Testing',
+    BUG_FIX: 'Bug Fix',
+    RETEST: 'Re-Test',
+    BLOCKED: 'Blocked',
+    DONE: 'Done',
+    CANCELLED: 'Cancelled',
+    'IN TEAM BACKLOG': 'In Team Backlog',
+    IMPLEMENT: 'Implement',
+    FUNNEL: 'Funnel',
+    BACKLOG: 'Backlog',
+    ASSESSMENT: 'Assessment',
+    ON_BOARD: 'On Board',
+    READY_FOR_DEVELOPMENT: 'Ready For Development',
+    IN_DEVELOPMENT: 'In Development',
+    ON_HOLD: 'On Hold',
+    DEVELOPMENT_COMPLETE: 'Development Complete',
+    READY_FOR_DEPLOYMENT: 'Ready For Deployment',
+    DEPLOYMENT: 'Deployment',
+    VALIDATION: 'Validation',
+    COMPLETED: 'Completed',
 };
 const isTransitionAction = (action) => action.toLowerCase().includes('status');
 /**
@@ -437,11 +437,13 @@ export const IssueDetailsPage = () => {
             return transition.timeInSourceStatus;
         return formatDuration(changedAt - startedAt);
     };
+    // Helper to format transition status in Initial Caps (Title Case)
+    const formatTransitionStatus = (status) => STATUS_BADGE_LABEL[status] || getStatusLabel(status) || status;
     // Compact Jira-style status label: 11px text, 8px/4px padding, 18px line
     // height (~22px tall), slight rounding — existing status colors and labels,
     // no changes to the underlying status values.
-    const transitionPill = (status) => (<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] leading-[18px] font-bold uppercase tracking-wide ${getStatusColor(status)}`} data-testid="transition-status">
-      {STATUS_BADGE_LABEL[status]}
+    const transitionPill = (status) => (<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] leading-[18px] font-bold tracking-wide ${getStatusColor(status)}`} data-testid="transition-status">
+      {formatTransitionStatus(status)}
     </span>);
     // Row content of a transition record — the Jira-style hierarchy:
     //   [avatar] <user> made transition - <date/time>        (line 1, ~14px)
@@ -728,10 +730,10 @@ export const IssueDetailsPage = () => {
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Confirm status transition">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[10px] font-bold tracking-wider text-slate-400">
                   New status
                 </span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] leading-[18px] font-bold uppercase tracking-wide ${getStatusColor(statusForColumn(pendingColumn))}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] leading-[18px] font-bold tracking-wide ${getStatusColor(statusForColumn(pendingColumn))}`}>
                   {columnLabel[pendingColumn]}
                 </span>
               </div>
@@ -741,7 +743,7 @@ export const IssueDetailsPage = () => {
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label htmlFor="transition-comment" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                <label htmlFor="transition-comment" className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5">
                   Comment{' '}
                   <span className="font-normal normal-case text-slate-400">(optional)</span>
                 </label>

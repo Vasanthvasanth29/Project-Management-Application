@@ -33,7 +33,7 @@ const SignalCard = ({ signal, onNavigate }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h4 className="text-xs font-bold" style={{ color: sevCfg.color }}>{signal.title}</h4>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ color: sevCfg.color, backgroundColor: sevCfg.bg }}>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: sevCfg.color, backgroundColor: sevCfg.bg }}>
               {sevCfg.label}
             </span>
             <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: confCfg.color, backgroundColor: confCfg.bg }}>
@@ -48,15 +48,15 @@ const SignalCard = ({ signal, onNavigate }) => {
 
           <div className="space-y-1.5 mt-2">
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#6b7280] uppercase tracking-wider w-16 flex-shrink-0 pt-0.5">Evidence</span>
+              <span className="text-[9px] font-bold text-[#6b7280] tracking-wider w-16 flex-shrink-0 pt-0.5">Evidence</span>
               <span className="text-[10px] text-[#4b5563] leading-relaxed">{signal.evidence}</span>
             </div>
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#d97706] uppercase tracking-wider w-16 flex-shrink-0 pt-0.5">Likely Outcome</span>
+              <span className="text-[9px] font-bold text-[#d97706] tracking-wider w-16 flex-shrink-0 pt-0.5">Likely Outcome</span>
               <span className="text-[10px] text-[#4b5563] leading-relaxed">{signal.likelyOutcome}</span>
             </div>
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#059669] uppercase tracking-wider w-16 flex-shrink-0 pt-0.5">Prevention</span>
+              <span className="text-[9px] font-bold text-[#059669] tracking-wider w-16 flex-shrink-0 pt-0.5">Prevention</span>
               <span className="text-[10px] text-[#4b5563] leading-relaxed">{signal.prevention}</span>
             </div>
           </div>

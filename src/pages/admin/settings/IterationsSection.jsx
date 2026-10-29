@@ -98,7 +98,7 @@ export const IterationsSection = () => {
       <SettingsCard title="PI-based Iteration Numbering" description="Iterations are generated inside a PI and numbered from that PI — no manual name templates." icon={<ListTree className="w-4 h-4"/>}>
         <div className="space-y-3">
           <div className="px-4 py-3 rounded-xl bg-[#f0fdfa] border border-[#ccfbf1]">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[#0f766e] mb-2">How numbers are generated</div>
+            <div className="text-[10px] font-bold tracking-wider text-[#0f766e] mb-2">How Numbers Are Generated</div>
             <ul className="space-y-1.5 text-xs text-[#134e4a]">
               <li>
                 Every iteration belongs to a <span className="font-bold">PI</span> — the Create Iteration form
@@ -118,12 +118,12 @@ export const IterationsSection = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Iteration number</div>
+              <div className="text-[10px] font-bold tracking-wider text-slate-400 mb-1">Iteration Number</div>
               <div className="text-sm font-semibold font-mono text-slate-800">30.1 → 30.2 → 30.3 → 30.4</div>
               <div className="text-[11px] text-slate-500 mt-1">Scoped to PI 30</div>
             </div>
             <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Issue identifier</div>
+              <div className="text-[10px] font-bold tracking-wider text-slate-400 mb-1">Issue Identifier</div>
               <div className="text-sm font-semibold font-mono text-slate-800">{'{KEY}'}30.4 → e.g. ECOMM30.4</div>
               <div className="text-[11px] text-slate-500 mt-1">Derived from the PI-based number</div>
             </div>

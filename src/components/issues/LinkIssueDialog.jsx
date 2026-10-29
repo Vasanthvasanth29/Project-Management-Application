@@ -191,7 +191,7 @@ export const LinkIssueDialog = ({ isOpen, onClose, task }) => {
 
           {/* Comment */}
           <div>
-            <label htmlFor="link-comment" className="block text-[9.6px] font-bold uppercase tracking-wider text-[#343A40] mb-1.5">
+            <label htmlFor="link-comment" className="block text-[9.6px] font-bold tracking-wider text-[#343A40] mb-1.5">
               Comment
             </label>
             <div id="link-comment">

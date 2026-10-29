@@ -105,7 +105,7 @@ export const InitiativeDetailPage = () => {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {initiative.issueKey && (<span className="text-xs font-bold text-[#0052cc]">{initiative.issueKey}</span>)}
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${boardStatus === 'COMPLETED'
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${boardStatus === 'COMPLETED'
             ? 'badge-green'
             : boardStatus === 'ON_HOLD'
                 ? 'badge-amber'
@@ -117,7 +117,7 @@ export const InitiativeDetailPage = () => {
                 {boardStatus === 'ON_HOLD' && <PauseCircle className="w-2.5 h-2.5"/>}
                 {INITIATIVE_BOARD_STATUS_LABEL[boardStatus]}
               </span>
-              {initiative.isArchived && (<span className="badge badge-gray text-[9px]">ARCHIVED</span>)}
+              {initiative.isArchived && (<span className="badge badge-gray text-[9px]">Archived</span>)}
             </div>
             <h1 className="text-xl font-bold text-[#1a1d23] mt-1 flex items-center gap-2">
               <Compass className="w-5 h-5 text-[#b45309] flex-shrink-0"/>
@@ -250,7 +250,7 @@ export const InitiativeDetailPage = () => {
                 <span className={getDueDateClass(initiative.dueDate)}>
                   {initiative.dueDate ? getDueDateLabel(initiative.dueDate) : 'Not set'}
                 </span>
-                {isOverdue && (<span className="ml-2 text-[10px] font-bold text-[#ef4444]">OVERDUE</span>)}
+                {isOverdue && (<span className="ml-2 text-[10px] font-bold text-[#ef4444]">Overdue</span>)}
               </IssueField>
             </div>
           </IssueSection>

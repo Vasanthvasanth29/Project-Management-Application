@@ -437,7 +437,7 @@ export const SprintRetrospectiveModal = ({ sprint, isOpen, onClose, }) => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-teal-600"/>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  <h4 className="text-xs font-bold tracking-wider text-slate-800">
                     Retrospective Summary & Agile Action Commitments
                   </h4>
                 </div>

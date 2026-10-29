@@ -181,6 +181,7 @@ export const INITIATIVE_BOARD_STATUS_LABEL = {
     IN_PROGRESS: 'In Progress',
     ON_HOLD: 'On Hold',
     COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
 };
 const CHAIN_TO_BOARD = {
     BACKLOG: 'BACKLOG',

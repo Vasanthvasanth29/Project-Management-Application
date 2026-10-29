@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
-import { matchProject } from '../../utils/idUtils';
+import { matchProject, matchId } from '../../utils/idUtils';
 import { IterationModuleLayout } from './IterationModuleLayout';
 import { IterationsPage } from './IterationsPage';
 import { ActiveSprintPage } from './ActiveSprintPage';
@@ -9,15 +9,24 @@ import { IterationReportsPage } from './IterationReportsPage';
 import { SprintManager } from './SprintManager';
 // Route element for every `.../iterations/*` pattern: resolves the project, picks
 // the sub-view from the URL tail (default | completed | live-iteration |
-// iteration-board | reports) and wraps it in the module layout (breadcrumb header
+// iteration-board | reports | specific sprint) and wraps it in the module layout (breadcrumb header
 // + primary nav). The legacy `active-sprint` tail still resolves to the Live
 // Iteration page and the legacy `?view=board` query still lands on the Iteration
 // Board, so old links keep working.
 export const IterationsModuleRoute = () => {
     const { projectId, projectKey, projectName } = useParams();
     const location = useLocation();
-    const { projects } = useAppStore();
+    const { projects, sprints } = useAppStore();
     const project = useMemo(() => projects.find((p) => matchProject(p, { projectId, projectKey, projectName })), [projects, projectId, projectKey, projectName]);
+    const matchedSprint = useMemo(() => {
+        if (!project)
+            return undefined;
+        const seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
+        if (!seg || ['reports', 'completed', 'live-iteration', 'active-sprint', 'iteration-board', 'iterations'].includes(seg)) {
+            return undefined;
+        }
+        return sprints.find((s) => matchId(s.projectId, project.id) && (matchId(s.id, seg) || s.iterationNumber === seg || s.name === seg));
+    }, [project, sprints, location.pathname]);
     const sub = useMemo(() => {
         const seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
         if (seg === 'reports')
@@ -36,7 +45,7 @@ export const IterationsModuleRoute = () => {
       </div>);
     }
     return (<IterationModuleLayout project={project}>
-      {sub === 'live-iteration' ? (<ActiveSprintPage project={project}/>) : sub === 'reports' ? (<IterationReportsPage project={project}/>) : sub === 'iteration-board' ? (<IterationBoardView projectId={project.id}/>) : sub === 'completed' ? (<IterationsPage view="completed"/>) : (<IterationsPage />)}
+      {matchedSprint ? (<ActiveSprintPage project={project} sprint={matchedSprint}/>) : sub === 'live-iteration' ? (<ActiveSprintPage project={project}/>) : sub === 'reports' ? (<IterationReportsPage project={project}/>) : sub === 'iteration-board' ? (<IterationBoardView projectId={project.id}/>) : sub === 'completed' ? (<IterationsPage view="completed"/>) : (<IterationsPage />)}
     </IterationModuleLayout>);
 };
 // The Iteration Board content itself (same board the old `?view=board` switcher

@@ -502,7 +502,7 @@ export const TasksListPage = ({ projectId, showBacklogOnly = false }) => {
             <option value="ALL">All Types</option>
             <option value="EPIC">⚡ Epics</option>
             <option value="TASK">✓ Tasks</option>
-            <option value="SUB-TASK">↳ Sub-tasks</option>
+            <option value="SUB-TASK">↳ Sub-Tasks</option>
           </select>
 
           {/* Parent Epic Filter */}
@@ -644,7 +644,7 @@ export const TasksListPage = ({ projectId, showBacklogOnly = false }) => {
         {totalVisibleCount === 0 ? (<EmptyState title="No tasks found" description="Try adjusting your search, filters, or create an Epic or Task to get started."/>) : (<div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-500 tracking-wider">
                   <th className="px-4 py-3 w-10">
                     <input type="checkbox" checked={bulkSelectedTaskIds.length > 0 && bulkSelectedTaskIds.length === filteredHierarchy.visibleEpics.flatMap(({ epic, tasks: epicTasks }) => {
                 const ids = [epic.id];

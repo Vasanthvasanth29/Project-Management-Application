@@ -131,13 +131,13 @@ export const InitiativeBoard = ({ tasks }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full ${style.dot}`}/>
-              <h3 className="text-[11px] font-bold text-[#1a1d23] uppercase tracking-wider">{getStatusLabel(id)}</h3>
+              <h3 className="text-[11px] font-bold text-[#1a1d23] tracking-wider">{getStatusLabel(id)}</h3>
             </div>
             <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/80 text-[#1a1d23] shadow-sm">
               {colTasks.length}
             </span>
           </div>
-          {isTerminal && (<div className="text-[9px] font-bold text-emerald-700 mt-1 uppercase tracking-wide">Terminal — no further moves</div>)}
+          {isTerminal && (<div className="text-[9px] font-bold text-emerald-700 mt-1 tracking-wide">Terminal — no further moves</div>)}
           {id === 'ON_HOLD' && (<div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 mt-1">
               <PauseCircle className="w-3 h-3"/>
               Paused — resumes where it left off

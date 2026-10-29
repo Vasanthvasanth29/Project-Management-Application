@@ -199,7 +199,7 @@
   }
 
   .input-label {
-    @apply block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-1.5;
+    @apply block text-xs font-bold tracking-wider text-[#4b5563] mb-1.5;
   }
 
   .select {
@@ -269,7 +269,30 @@
 
   /* ===== Section ===== */
   .section-title {
-    @apply text-sm font-bold text-[#1a1d23] mb-3.5 tracking-tight uppercase;
+    @apply text-sm font-bold text-[#1a1d23] mb-3.5 tracking-tight;
+  }
+
+  /* ===== Work Item Details — shared typography =====
+     One light-black / dark-gray text system for every Work Item Details
+     section (Information, People, Dates, Description, Related Work,
+     Activity). All sizes are ~20% smaller than the base scale and every
+     non-link text color is unified on --work-item-text #343A40.
+       labels 11.2px regular · values/controls 11.2px medium · headings
+       12.8px semibold · metadata 10.4px regular · links keep #0052cc */
+  .fe-label {
+    @apply text-[11.2px] leading-4 font-normal text-[color:var(--work-item-text)];
+  }
+  .fe-value {
+    @apply text-[11.2px] leading-4 font-medium text-[color:var(--work-item-text)];
+  }
+  .fe-heading {
+    @apply text-[12.8px] leading-5 font-semibold text-[color:var(--work-item-text)];
+  }
+  .fe-meta {
+    @apply text-[10.4px] leading-4 text-[color:var(--work-item-text)];
+  }
+  .fe-control {
+    @apply text-[11.2px] leading-4 font-medium text-[color:var(--work-item-text)];
   }
 
   /* ===== Work Item Details — shared typography =====

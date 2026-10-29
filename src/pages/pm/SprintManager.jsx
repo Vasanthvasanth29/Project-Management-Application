@@ -215,7 +215,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#1a73e8]"/>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#1f1f1f]">
+              <h4 className="text-xs font-bold tracking-wider text-[#1f1f1f]">
                 Unassigned Project Work Queue — Drag tasks into Total, In-Progress, Remaining, or Done
               </h4>
             </div>
@@ -652,7 +652,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {/* Currently Assigned Members */}
                 {assignedMembers.length > 0 && (<div>
-                    <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    <h3 className="text-xs font-bold text-slate-600 tracking-wider mb-2">
                       Assigned ({assignedMembers.length})
                     </h3>
                     <div className="space-y-2">
@@ -679,7 +679,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
 
                 {/* Available Members to Add */}
                 <div>
-                  <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  <h3 className="text-xs font-bold text-slate-600 tracking-wider mb-2">
                     {assignedMembers.length > 0 ? 'Add More Members' : 'Available Members'}
                   </h3>
                   {availableMembers.length === 0 ? (<p className="text-xs text-slate-400 italic">All members are already assigned</p>) : (<div className="space-y-2">

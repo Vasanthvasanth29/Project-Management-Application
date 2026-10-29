@@ -157,19 +157,19 @@ const TimelineItem = ({ item, onNavigate, isLast }) => {
         {expanded && (<div className="px-3 pb-3 space-y-2 border-t border-black/[0.04]">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
               <div>
-                <p className="text-[9px] font-bold text-[#6b7280] uppercase tracking-wider mb-0.5">Evidence</p>
+                <p className="text-[9px] font-bold text-[#6b7280] tracking-wider mb-0.5">Evidence</p>
                 <p className="text-[10px] text-[#4b5563] leading-snug">{item.evidence}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-[#6b7280] uppercase tracking-wider mb-0.5">Impact</p>
+                <p className="text-[9px] font-bold text-[#6b7280] tracking-wider mb-0.5">Impact</p>
                 <p className="text-[10px] text-[#4b5563] leading-snug">{item.impact}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-[#6b7280] uppercase tracking-wider mb-0.5">Decision</p>
+                <p className="text-[9px] font-bold text-[#6b7280] tracking-wider mb-0.5">Decision</p>
                 <p className="text-[10px] text-[#4b5563] leading-snug">{item.decision}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-[#6b7280] uppercase tracking-wider mb-0.5">Likely Outcome</p>
+                <p className="text-[9px] font-bold text-[#6b7280] tracking-wider mb-0.5">Likely Outcome</p>
                 <p className="text-[10px] text-[#4b5563] leading-snug">{item.likelyOutcome}</p>
               </div>
             </div>

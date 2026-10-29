@@ -251,7 +251,7 @@ export const TeamPage = () => {
                 <div className="flex items-center gap-2.5">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Workload</span>
+                      <span className="text-[10px] font-bold text-slate-500">Workload</span>
                       <span className="text-[10px] font-bold" style={{ color: barColor }}>{activeCount}/{CAPACITY} &middot; {workloadLevel}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-1.5">
@@ -262,7 +262,7 @@ export const TeamPage = () => {
 
                 {/* Assigned Projects */}
                 {assignedProjects.length > 0 && (<div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                    <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
                       <FolderKanban className="w-3 h-3"/> Projects
                     </div>
                     <div className="space-y-0.5">
@@ -380,7 +380,7 @@ export const TeamPage = () => {
                   {activeTasks.length + completedTasks.length === 0 ? (<p className="text-xs text-slate-400 py-3 text-center">No tasks assigned</p>) : (<div className="border border-slate-100 rounded-xl overflow-hidden">
                       <table className="w-full text-left">
                         <thead>
-                          <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase">
+                          <tr className="bg-slate-50 text-[10px] font-bold text-slate-500">
                             <th className="px-3 py-2">Task</th>
                             <th className="px-3 py-2">Project</th>
                             <th className="px-3 py-2">Priority</th>

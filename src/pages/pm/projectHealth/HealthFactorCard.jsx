@@ -11,7 +11,7 @@ export const HealthFactorCard = ({ factor }) => {
     const offset = circumference - (factor.score / 100) * circumference;
     return (<div className="card p-4 hover:border-[#e2e5ea] transition-colors">
       <div className="flex items-start justify-between mb-3">
-        <h3 className="text-xs font-bold text-[#1a1d23] uppercase tracking-wider">{factor.label}</h3>
+        <h3 className="text-xs font-bold text-[#1a1d23] tracking-wider">{factor.label}</h3>
         <div className="flex items-center gap-1">
           {factor.trend > 0 && <TrendingUp className="w-3 h-3 text-[#059669]"/>}
           {factor.trend < 0 && <TrendingDown className="w-3 h-3 text-[#dc2626]"/>}

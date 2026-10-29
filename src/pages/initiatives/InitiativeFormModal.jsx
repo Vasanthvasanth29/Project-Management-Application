@@ -142,7 +142,7 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {!isEdit && (<div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-[#444746] tracking-wider">
                 Project <span className="text-[#d93025]">*</span>
               </label>
               <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]">
@@ -154,14 +154,14 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
             </div>)}
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-[#444746] tracking-wider">
               Name <span className="text-[#d93025]">*</span>
             </label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Support Services Portfolio" className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]"/>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-[#444746] tracking-wider">
               Description
             </label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="What does this Initiative deliver, and for whom?" className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488] resize-y"/>
@@ -169,7 +169,7 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-[#444746] tracking-wider">
                 Owner
               </label>
               <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]">
@@ -181,7 +181,7 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-[#444746] tracking-wider">
                 Priority
               </label>
               <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]">
@@ -194,13 +194,13 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-[#444746] tracking-wider">
                 Start Date
               </label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]"/>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-[#444746] tracking-wider">
                 Target Date
               </label>
               <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]"/>
@@ -211,7 +211,7 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
             </p>)}
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-[#444746] uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-[#444746] tracking-wider">
               Status
             </label>
             {!isEdit ? (<div className="relative">
@@ -221,7 +221,7 @@ export const InitiativeFormModal = ({ isOpen, initiative, onClose, }) => {
                 <Lock className="w-3.5 h-3.5 text-[#9aa0a6] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"/>
               </div>) : (<select value={targetBoardStatus} onChange={(e) => setTargetBoardStatus(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-[#f8fafd] border border-[#e0e2ec] text-xs font-medium text-[#1f1f1f] focus:outline-none focus:border-[#0d9488]">
                 <option value="">
-                  {initiativeBoardStatusOf(initiative.status)} (current)
+                  {INITIATIVE_BOARD_STATUS_LABEL[initiativeBoardStatusOf(initiative.status)] || initiativeBoardStatusOf(initiative.status)} (current)
                 </option>
                 {allowedBoardMoves.map((m) => (<option key={m.to} value={m.to}>
                     {INITIATIVE_BOARD_STATUS_LABEL[m.to]}

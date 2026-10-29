@@ -28,12 +28,12 @@ const STYLES = {
     'SUB-TASK': {
         className: 'bg-[#ecfeff] text-[#0891b2] border border-[#cffafe]',
         icon: <CornerDownRight className="w-3 h-3 text-[#0891b2] flex-shrink-0"/>,
-        title: 'Sub-task (Child item of a Task)',
+        title: 'Sub-Task (Child item of a Task)',
     },
     SUBTASK: {
         className: 'bg-[#ecfeff] text-[#0891b2] border border-[#cffafe]',
         icon: <CornerDownRight className="w-3 h-3 text-[#0891b2] flex-shrink-0"/>,
-        title: 'Sub-task (Child item of a Task)',
+        title: 'Sub-Task (Child item of a Task)',
     },
     BUG: {
         className: 'bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]',
@@ -59,7 +59,7 @@ export const TaskTypeBadge = ({ type, className = '', showIconOnly = false, plai
         {getWorkItemLabel(type)}
       </span>);
     }
-    return (<span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase ${style.className} ${className}`} title={style.title}>
+    return (<span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider ${style.className} ${className}`} title={style.title}>
       {style.icon}
       {!showIconOnly && <span>{showIconOnly ? '' : getWorkItemLabel(type)}</span>}
     </span>);

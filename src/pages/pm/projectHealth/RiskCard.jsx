@@ -18,7 +18,7 @@ export const RiskCard = ({ risk, onAction }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h4 className="text-xs font-bold" style={{ color: config.color }}>{risk.title}</h4>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ color: config.color, backgroundColor: config.bg }}>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: config.color, backgroundColor: config.bg }}>
               {config.label}
             </span>
             <ConfidenceIndicator confidence={risk.confidence} compact/>
@@ -27,15 +27,15 @@ export const RiskCard = ({ risk, onAction }) => {
           {/* Risk → Why → Impact → Action flow */}
           <div className="space-y-1.5 mt-2">
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#dc2626] uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">Risk</span>
+              <span className="text-[9px] font-bold text-[#dc2626] tracking-wider w-10 flex-shrink-0 pt-0.5">Risk</span>
               <span className="text-[10px] text-[#4b5563] leading-relaxed">{risk.explanation}</span>
             </div>
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#d97706] uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">Why</span>
+              <span className="text-[9px] font-bold text-[#d97706] tracking-wider w-10 flex-shrink-0 pt-0.5">Why</span>
               <span className="text-[10px] text-[#6b7280] leading-relaxed">{risk.whyDetected}</span>
             </div>
             <div className="flex items-start gap-1.5">
-              <span className="text-[9px] font-bold text-[#2563eb] uppercase tracking-wider w-10 flex-shrink-0 pt-0.5">Impact</span>
+              <span className="text-[9px] font-bold text-[#2563eb] tracking-wider w-10 flex-shrink-0 pt-0.5">Impact</span>
               <span className="text-[10px] text-[#6b7280] leading-relaxed">{risk.impact}</span>
             </div>
           </div>

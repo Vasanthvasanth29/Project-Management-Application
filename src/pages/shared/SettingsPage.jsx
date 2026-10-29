@@ -147,7 +147,7 @@ export const SettingsPage = () => {
           {/* Profile Details Form */}
           <form onSubmit={handleSaveProfile} className="space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider font-display">
+              <h3 className="text-sm font-bold text-slate-800 tracking-wider font-display">
                 Profile Details
               </h3>
               {isAdmin && isEditing && (<span className="text-xs text-brand-600 font-semibold flex items-center gap-1">
@@ -191,7 +191,7 @@ export const SettingsPage = () => {
           </form>
 
           <div className="pt-4 border-t border-slate-100 space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider font-display">
+            <h3 className="text-sm font-bold text-slate-800 tracking-wider font-display">
               Security
             </h3>
             <button className="btn-secondary btn-sm" onClick={() => setShowPasswordModal(true)}>

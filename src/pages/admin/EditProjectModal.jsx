@@ -116,7 +116,7 @@ export const EditProjectModal = ({ project, onClose }) => {
           <div className="rounded-2xl border border-slate-200 p-4 space-y-4">
             <div className="flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-indigo-600"/>
-              <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase">Project Details</h3>
+              <h3 className="text-xs font-bold tracking-widest text-slate-500">Project Details</h3>
             </div>
 
             <div>

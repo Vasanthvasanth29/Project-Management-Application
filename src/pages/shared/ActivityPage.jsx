@@ -540,23 +540,23 @@ export const ActivityPage = () => {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="card p-4">
           <div className="text-2xl font-bold text-[#0d9488]">{summary.total}</div>
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Total Activities</div>
+          <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Total Activities</div>
         </div>
         <div className="card p-4">
           <div className="text-2xl font-bold text-[#06b6d4]">{summary.today}</div>
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Today</div>
+          <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Today</div>
         </div>
         <div className="card p-4">
           <div className="text-2xl font-bold text-[#6366f1]">{summary.taskChanges}</div>
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Task Changes</div>
+          <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Task Changes</div>
         </div>
         <div className="card p-4">
           <div className="text-2xl font-bold text-[#f59e0b]">{summary.sprintRelease}</div>
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Iteration/Release</div>
+          <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Iteration/Release</div>
         </div>
         <div className="card p-4">
           <div className="text-2xl font-bold text-[#ef4444]">{summary.risk}</div>
-          <div className="text-[10px] text-[#9ca3af] uppercase tracking-wider font-semibold">Risk Activity</div>
+          <div className="text-[10px] text-[#9ca3af] tracking-wider font-semibold">Risk Activity</div>
         </div>
       </div>
 
@@ -603,7 +603,7 @@ export const ActivityPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Project */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <FolderKanban className="w-3 h-3 text-[#0d9488]"/>
                   Project
                 </label>
@@ -615,7 +615,7 @@ export const ActivityPage = () => {
 
               {/* User */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Users className="w-3 h-3 text-[#0d9488]"/>
                   User
                 </label>
@@ -627,7 +627,7 @@ export const ActivityPage = () => {
 
               {/* Team */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Users className="w-3 h-3 text-[#0d9488]"/>
                   Team
                 </label>
@@ -639,7 +639,7 @@ export const ActivityPage = () => {
 
               {/* Entity Type */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Zap className="w-3 h-3 text-[#0d9488]"/>
                   Activity Type
                 </label>
@@ -653,7 +653,7 @@ export const ActivityPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Iteration */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-[#0d9488]"/>
                   Iteration
                 </label>
@@ -665,7 +665,7 @@ export const ActivityPage = () => {
 
               {/* Release */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Package className="w-3 h-3 text-[#0d9488]"/>
                   Release
                 </label>
@@ -677,7 +677,7 @@ export const ActivityPage = () => {
 
               {/* Date Preset */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
+                <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 flex items-center gap-1">
                   <Clock className="w-3 h-3 text-[#0d9488]"/>
                   Date Range
                 </label>
@@ -694,12 +694,12 @@ export const ActivityPage = () => {
             {/* Custom Date Range */}
             {filters.datePreset === 'custom' && (<div className="flex items-center gap-3 animate-slide-in">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 block">From</label>
+                  <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 block">From</label>
                   <input type="date" value={filters.dateFrom} onChange={(e) => updateFilter({ dateFrom: e.target.value })} className="input text-xs py-1.5"/>
                 </div>
                 <span className="text-[#9ca3af] mt-5">—</span>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#9ca3af] mb-1 block">To</label>
+                  <label className="text-[10px] font-bold tracking-wider text-[#9ca3af] mb-1 block">To</label>
                   <input type="date" value={filters.dateTo} onChange={(e) => updateFilter({ dateTo: e.target.value })} className="input text-xs py-1.5"/>
                 </div>
               </div>)}

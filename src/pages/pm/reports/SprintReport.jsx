@@ -4,7 +4,7 @@ import { useAppStore } from '../../../store/appStore';
 import { ProgressBar } from '../../../components/common/ProgressBar';
 import { formatDate } from '../../../utils/dateUtils';
 import { collectSprintWorkItems } from '../../../utils/sprintIssues';
-import { isCancelledWorkItem } from '../../../utils/roleUtils';
+import { isCancelledWorkItem, getSprintStatusLabel } from '../../../utils/roleUtils';
 import { BurndownPlot, buildBurndownSeries, burndownScope } from './BurndownChart';
 const SPRINT_STATUS_BADGE = {
     PLANNED: 'bg-slate-100 text-slate-700',
@@ -59,8 +59,8 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
                 <FileText className="w-4 h-4 text-[#1a73e8]"/>
               </div>
               <h2 className="text-lg font-bold text-[#1f1f1f] font-display">Iteration Report</h2>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${SPRINT_STATUS_BADGE[sprint.status]}`}>
-                {sprint.status}
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${SPRINT_STATUS_BADGE[sprint.status]}`}>
+                {getSprintStatusLabel(sprint.status)}
               </span>
             </div>
             <p className="text-xs text-[#747775]">
@@ -70,12 +70,12 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
           <div className="flex items-center gap-3">
             {sprintOptions && onSprintChange && (<select aria-label="Select iteration for this report" value={sprint.id} onChange={(e) => onSprintChange(e.target.value)} className="input text-xs py-1.5">
                 {sprintOptions.map((option) => (<option key={option.id} value={option.id}>
-                    {option.name} ({option.status})
+                    {option.name} ({getSprintStatusLabel(option.status)})
                   </option>))}
               </select>)}
             <div className="text-right">
               <div className="text-2xl font-bold text-[#1f1f1f]">{completionPct}%</div>
-              <div className="text-[10px] text-[#747775] uppercase tracking-wider">Complete</div>
+              <div className="text-[10px] text-[#747775] tracking-wider">Complete</div>
             </div>
           </div>
         </div>
@@ -101,7 +101,7 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="w-3.5 h-3.5 text-[#747775]"/>
-              <span className="text-[10px] text-[#747775] uppercase tracking-wider">Duration</span>
+              <span className="text-[10px] text-[#747775] tracking-wider">Duration</span>
             </div>
             <div className="text-sm font-bold text-[#1f1f1f]">{totalDays} days</div>
             <div className="text-[10px] text-[#747775]">{daysElapsed} elapsed, {daysRemaining} remaining</div>
@@ -109,25 +109,25 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-3.5 h-3.5 text-[#1a73e8]"/>
-              <span className="text-[10px] text-[#747775] uppercase tracking-wider">Iteration Goal</span>
+              <span className="text-[10px] text-[#747775] tracking-wider">Iteration Goal</span>
             </div>
             <div className="text-xs font-semibold text-[#1f1f1f] line-clamp-2">{sprint.goal || 'No goal set'}</div>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-3.5 h-3.5 text-[#d97706]"/>
-              <span className="text-[10px] text-[#747775] uppercase tracking-wider">Hours</span>
+              <span className="text-[10px] text-[#747775] tracking-wider">Hours</span>
             </div>
             <div className="text-sm font-bold text-[#1f1f1f]">{totalActual}h / {totalEstimated}h</div>
-            <div className="text-[10px] text-[#747775]">actual / estimated</div>
+            <div className="text-[10px] text-[#747775]">Actual / Estimated</div>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
             <div className="flex items-center gap-2 mb-1">
               <ListTodo className="w-3.5 h-3.5 text-[#059669]"/>
-              <span className="text-[10px] text-[#747775] uppercase tracking-wider">Tasks</span>
+              <span className="text-[10px] text-[#747775] tracking-wider">Tasks</span>
             </div>
-            <div className="text-sm font-bold text-[#1f1f1f]">{sprintTasks.length} total</div>
-            <div className="text-[10px] text-[#747775]">{completedTasks.length} completed</div>
+            <div className="text-sm font-bold text-[#1f1f1f]">{sprintTasks.length} Total</div>
+            <div className="text-[10px] text-[#747775]">{completedTasks.length} Completed</div>
           </div>
         </div>
       </div>
@@ -161,43 +161,43 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#747775] uppercase tracking-wider">Work Summary</h4>
+            <h4 className="text-xs font-bold text-[#747775] tracking-wider">Work Summary</h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-100">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600"/>
                   <span className="text-xs font-semibold text-emerald-800">Completed</span>
                 </div>
-                <span className="text-sm font-bold text-emerald-900">{completedTasks.length} tasks</span>
+                <span className="text-sm font-bold text-emerald-900">{completedTasks.length} Tasks</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-blue-50 border border-blue-100">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-blue-600"/>
                   <span className="text-xs font-semibold text-blue-800">In Progress</span>
                 </div>
-                <span className="text-sm font-bold text-blue-900">{inProgressTasks.length} tasks</span>
+                <span className="text-sm font-bold text-blue-900">{inProgressTasks.length} Tasks</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50 border border-amber-100">
                 <div className="flex items-center gap-2">
                   <ListTodo className="w-4 h-4 text-amber-600"/>
                   <span className="text-xs font-semibold text-amber-800">Remaining</span>
                 </div>
-                <span className="text-sm font-bold text-amber-900">{remainingTasks.length} tasks</span>
+                <span className="text-sm font-bold text-amber-900">{remainingTasks.length} Tasks</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-violet-50 border border-violet-100">
                 <div className="flex items-center gap-2">
                   <PlusCircle className="w-4 h-4 text-violet-600"/>
                   <span className="text-xs font-semibold text-violet-800">Added</span>
                 </div>
-                <span className="text-sm font-bold text-violet-900">{addedTasks.length} tasks</span>
+                <span className="text-sm font-bold text-violet-900">{addedTasks.length} Tasks</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
                 <div className="flex items-center gap-2">
                   <MinusCircle className="w-4 h-4 text-slate-500"/>
-                  <span className="text-xs font-semibold text-slate-600">Removed / scope changes</span>
+                  <span className="text-xs font-semibold text-slate-600">Removed / Scope Changes</span>
                 </div>
                 <span className="text-sm font-bold text-slate-700">
-                  {removedTasks.length} tasks
+                  {removedTasks.length} Tasks
                   {removedTasks.length > 0 && (<span className="ml-1 text-[10px] font-medium">cancelled from scope</span>)}
                 </span>
               </div>
@@ -206,12 +206,12 @@ export const SprintReport = ({ projectId, sprintId, sprintOptions, onSprintChang
                     <AlertTriangle className="w-4 h-4 text-red-600"/>
                     <span className="text-xs font-semibold text-red-800">Blocked</span>
                   </div>
-                  <span className="text-sm font-bold text-red-900">{blockedTasks.length} tasks</span>
+                  <span className="text-sm font-bold text-red-900">{blockedTasks.length} Tasks</span>
                 </div>)}
             </div>
           </div>
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#747775] uppercase tracking-wider">Velocity Indicators</h4>
+            <h4 className="text-xs font-bold text-[#747775] tracking-wider">Velocity Indicators</h4>
             <div className="space-y-2">
               <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div className="text-xs text-[#747775] mb-1">Completion Rate</div>

@@ -7,10 +7,10 @@ const ROLES = ['ADMIN', 'PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER'];
 // Access scope per role: ADMIN is unrestricted, every other role is bounded by
 // project membership, team membership or assigned work.
 const ROLE_META = {
-    ADMIN: { scope: 'UNRESTRICTED', blurb: 'Unrestricted full access' },
-    PROJECT_MANAGER: { scope: 'PROJECT SCOPED', blurb: 'Project-scoped access' },
-    TEAM_LEADER: { scope: 'TEAM / PROJECT SCOPED', blurb: 'Team/project-scoped access' },
-    MEMBER: { scope: 'ASSIGNED WORK SCOPED', blurb: 'Assigned-work access' },
+    ADMIN: { scope: 'Unrestricted', blurb: 'Unrestricted full access' },
+    PROJECT_MANAGER: { scope: 'Project Scoped', blurb: 'Project-scoped access' },
+    TEAM_LEADER: { scope: 'Team/Project Scoped', blurb: 'Team/project-scoped access' },
+    MEMBER: { scope: 'Assigned Work Scoped', blurb: 'Assigned-work access' },
 };
 // Rows marked `() => true` are capabilities the application does not gate by
 // role: every role has them inside its own scope (admin = every scope). Rows
@@ -129,7 +129,7 @@ export const RolesPermissionsPage = () => {
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/25">
           <ShieldCheck className="w-4 h-4 text-[#0d9488]"/>
-          <span className="text-xs font-bold text-[#0d9488]">ADMIN = Full Access</span>
+          <span className="text-xs font-bold text-[#0d9488]">Admin = Full Access</span>
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export const RolesPermissionsPage = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[#0d9488] text-white">
-                  ADMIN
+                  Admin
                 </span>
                 <h2 className="text-sm font-bold text-slate-900">Full System Access</h2>
               </div>
@@ -207,13 +207,13 @@ export const RolesPermissionsPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left font-bold text-slate-600 text-xs uppercase tracking-wider px-4 py-3 min-w-[260px]">
+                <th className="text-left font-bold text-slate-600 text-xs tracking-wider px-4 py-3 min-w-[260px]">
                   Capability
                 </th>
-                {ROLES.map((role) => (<th key={role} className={`px-3 py-3 text-center font-bold text-slate-600 text-xs uppercase tracking-wider whitespace-nowrap w-[130px] ${role === 'ADMIN' ? 'bg-[#0d9488]/[0.07]' : ''}`}>
+                {ROLES.map((role) => (<th key={role} className={`px-3 py-3 text-center font-bold text-slate-600 text-xs tracking-wider whitespace-nowrap w-[130px] ${role === 'ADMIN' ? 'bg-[#0d9488]/[0.07]' : ''}`}>
                     <div className="flex flex-col items-center gap-1">
                       <RoleBadge role={role}/>
-                      <span className="text-[10px] font-semibold text-slate-400 normal-case tracking-normal">
+                      <span className="text-[10px] font-semibold text-slate-400 tracking-normal">
                         {roleCounts[role]} user{roleCounts[role] !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -231,14 +231,14 @@ export const RolesPermissionsPage = () => {
                         <span className="w-6 h-6 rounded-md bg-[#0d9488]/10 flex items-center justify-center shrink-0">
                           <Icon className="w-3.5 h-3.5 text-[#0d9488]"/>
                         </span>
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700 shrink-0">
+                        <span className="text-xs font-bold tracking-wider text-slate-700 shrink-0">
                           {group.title}
                         </span>
                         <span className="hidden md:inline text-[11px] text-slate-400 truncate flex-1">
                           {group.note}
                         </span>
                         <span className="text-[10px] font-semibold text-slate-400 shrink-0">
-                          {group.rows.length} permissions
+                          {group.rows.length} Permissions
                         </span>
                         <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}/>
                       </button>
@@ -260,7 +260,7 @@ export const RolesPermissionsPage = () => {
                         })}
                       </tr>))}
                   {isOpen && (<tr className="bg-slate-50/70 border-t border-slate-200/70">
-                      <td className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <td className="px-4 py-2 text-[11px] font-bold tracking-wider text-slate-500">
                         Granted in this section
                       </td>
                       {ROLES.map((role) => (<td key={role} className={`px-3 py-2 text-center ${role === 'ADMIN' ? 'bg-[#0d9488]/[0.05]' : ''}`}>
@@ -280,7 +280,7 @@ export const RolesPermissionsPage = () => {
             <span className="w-6 h-6 rounded-md bg-[#0d9488]/10 flex items-center justify-center shrink-0">
               <Zap className="w-3.5 h-3.5 text-[#0d9488]"/>
             </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 shrink-0">
+            <span className="text-xs font-bold tracking-wider text-slate-700 shrink-0">
               Admin Actions
             </span>
             <span className="hidden md:inline text-[11px] text-slate-400 truncate flex-1">

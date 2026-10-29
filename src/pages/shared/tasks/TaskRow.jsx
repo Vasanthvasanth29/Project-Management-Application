@@ -274,9 +274,9 @@ export const TaskRow = ({ task, level, hasChildren, isExpanded, project, team, a
               <span>Add Task</span>
             </button>)}
 
-          {isTask && (<button type="button" onClick={() => onAddChild(task)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#ecfeff] hover:bg-[#cffafe] text-[#0891b2] text-[11px] font-semibold transition-colors shadow-2xs" title="Add Sub-task under this Task">
+          {isTask && (<button type="button" onClick={() => onAddChild(task)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#ecfeff] hover:bg-[#cffafe] text-[#0891b2] text-[11px] font-semibold transition-colors shadow-2xs" title="Add Sub-Task under this Task">
               <Plus className="w-3 h-3"/>
-              <span>Add Sub-task</span>
+              <span>Add Sub-Task</span>
             </button>)}
 
           {/* Move Button */}

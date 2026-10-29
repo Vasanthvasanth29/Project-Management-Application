@@ -66,19 +66,19 @@ export const UserDetailModal = ({ user, onClose }) => {
           {/* Meta */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <div className="text-[10px] font-semibold tracking-wider text-slate-400 flex items-center gap-1">
                 <Hash className="w-3 h-3"/> Employee ID
               </div>
               <div className="text-sm font-medium text-slate-800 mt-1">{user.employeeId}</div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <div className="text-[10px] font-semibold tracking-wider text-slate-400 flex items-center gap-1">
                 <Briefcase className="w-3 h-3"/> Job Title
               </div>
               <div className="text-sm font-medium text-slate-800 mt-1">{user.jobTitle || '—'}</div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <div className="text-[10px] font-semibold tracking-wider text-slate-400 flex items-center gap-1">
                 <Clock className="w-3 h-3"/> Last Active
               </div>
               <div className="text-sm font-medium text-slate-800 mt-1">
@@ -86,7 +86,7 @@ export const UserDetailModal = ({ user, onClose }) => {
               </div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Joined</div>
+              <div className="text-[10px] font-semibold tracking-wider text-slate-400">Joined</div>
               <div className="text-sm font-medium text-slate-800 mt-1">{formatDate(user.createdAt)}</div>
             </div>
           </div>
@@ -106,7 +106,7 @@ export const UserDetailModal = ({ user, onClose }) => {
 
           {/* Project Involvement */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+            <div className="text-xs font-bold tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
               <FolderKanban className="w-3.5 h-3.5"/>
               Project Involvement
             </div>

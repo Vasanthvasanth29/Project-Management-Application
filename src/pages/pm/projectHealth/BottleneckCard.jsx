@@ -29,7 +29,7 @@ export const BottleneckSection = ({ bottlenecks }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#1a1d23]">{bn.stage}</span>
+                    <span className="text-xs font-bold text-[#1a1d23]">{bn.stage === 'CANCELLED' ? 'Cancelled' : bn.stage}</span>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: cfg.color, backgroundColor: cfg.bg }}>
                       {bn.severity}
                     </span>

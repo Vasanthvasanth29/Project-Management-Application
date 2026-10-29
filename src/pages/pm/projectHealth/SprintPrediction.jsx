@@ -33,7 +33,7 @@ export const SprintPrediction = ({ prediction }) => {
             }}/>)}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-[10px] font-bold text-[#1a1d23] drop-shadow-sm">
-            {completionPct}% complete
+            {completionPct}% Complete
           </span>
         </div>
       </div>
@@ -42,15 +42,15 @@ export const SprintPrediction = ({ prediction }) => {
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9] text-center">
           <div className="text-lg font-bold text-[#059669]">{completedTasks}</div>
-          <div className="text-[9px] font-bold uppercase tracking-wider text-[#9ca3af]">Completed</div>
+          <div className="text-[9px] font-bold tracking-wider text-[#9ca3af]">Completed</div>
         </div>
         <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9] text-center">
           <div className="text-lg font-bold text-[#d97706]">{remainingTasks}</div>
-          <div className="text-[9px] font-bold uppercase tracking-wider text-[#9ca3af]">Remaining</div>
+          <div className="text-[9px] font-bold tracking-wider text-[#9ca3af]">Remaining</div>
         </div>
         <div className="p-3 rounded-xl bg-[#f8fafc] border border-[#f1f5f9] text-center">
           <div className="text-lg font-bold text-[#0d9488]">{predictedRemaining}</div>
-          <div className="text-[9px] font-bold uppercase tracking-wider text-[#9ca3af]">Predicted Left</div>
+          <div className="text-[9px] font-bold tracking-wider text-[#9ca3af]">Predicted Left</div>
         </div>
       </div>
 

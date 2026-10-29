@@ -218,7 +218,7 @@ export const ProjectRoadmap = ({ projectId }) => {
         {/* Timeline Header */}
         <div className="flex border-b border-[#e0e2ec] bg-[#f8fafd]">
           <div className="w-64 flex-shrink-0 p-3 border-r border-[#e0e2ec]">
-            <span className="text-[10px] font-bold text-[#747775] uppercase tracking-wider">Item</span>
+            <span className="text-[10px] font-bold text-[#747775] tracking-wider">Item</span>
           </div>
           <div className="flex-1 p-3 overflow-x-auto">
             <div className="flex justify-between text-[10px] text-[#747775]">
