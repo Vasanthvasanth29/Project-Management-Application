@@ -83,6 +83,28 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
         next.has(id) ? next.delete(id) : next.add(id);
         return next;
     });
+
+    useEffect(() => {
+  const cards = document.querySelectorAll('[data-pi-card]');
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('pi-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    {
+      threshold: 0.15,
+    }
+  );
+
+  cards.forEach((card) => observer.observe(card));
+
+  return () => observer.disconnect();
+}, [rows]);
     return (<div className="space-y-3" data-product-increments="">
       <div className="card p-4 flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-start gap-2.5 min-w-0">
@@ -108,68 +130,138 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
           <EmptyState icon={ListTree} title="No Product Increments yet" description={canCreate
                 ? 'Create the first PI for this project. Iterations always belong to a PI, so they can be planned once a PI exists.'
                 : 'This project has no PI yet. A Project Manager or Team Leader creates PIs here; iterations are generated inside them.'} action={canCreate ? { label: 'Create PI', onClick: () => setShowCreate(true) } : undefined}/>
-        </div>) : (<div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-          {rows.map((row) => {
-                const { pi, sprints } = row;
-                const isOpen = expanded.has(pi.id);
-                return (<div key={pi.id} ref={(el) => el ? cardRefs.current.set(pi.id, el) : cardRefs.current.delete(pi.id)} data-pi-card={pi.id} className={`card p-4 space-y-2.5 transition-shadow ${highlightId === pi.id ? 'ring-2 ring-[#0d9488] shadow-lg' : ''}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#0d9488] text-white text-[11px] font-bold">
-                      <ListTree className="w-3 h-3"/> {pi.name}
-                    </span>
-                    <SprintStatusBadge status={row.status}/>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {canCreate && row.status !== 'COMPLETED' && (<button type="button" onClick={() => openCreateIteration(pi)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-[#0f766e] bg-white hover:bg-[#ccfbf1] border border-[#99f6e4] transition-colors cursor-pointer" data-testid="pi-create-iteration">
-                        <Plus className="w-3 h-3"/> Create Iteration
-                      </button>)}
-                    <button type="button" onClick={() => onOpenIterations(pi.id)} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0052cc] hover:underline disabled:text-slate-300 disabled:no-underline cursor-pointer disabled:cursor-not-allowed" data-testid="open-pi-iterations">
-                      Open iterations <ExternalLink className="w-3 h-3"/>
-                    </button>
-                  </div>
-                </div>
-                {pi.title && <div className="text-sm font-semibold text-[#172b4d] break-words" data-testid="pi-title">{pi.title}</div>}
+        </div>) : (
+<div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table className="w-full min-w-[900px] table-fixed border-collapse text-left">
+    <thead className="bg-slate-50">
+      <tr className="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-600">
+        <th className="w-[20%] px-4 py-3">Name</th>
+        <th className="w-[14%] px-4 py-3">Status</th>
+        <th className="w-[24%] px-4 py-3">Date Range</th>
+        <th className="w-[16%] px-4 py-3">Iterations</th>
+        <th className="w-[18%] px-4 py-3">Progress</th>
+        <th className="w-[8%] px-4 py-3">Actions</th>
+      </tr>
+    </thead>
 
-                <div className="flex items-center gap-1.5 text-xs text-slate-600 tabular-nums">
-                  <CalendarRange className="w-3.5 h-3.5 text-slate-400"/>
+    <tbody className="divide-y divide-slate-100">
+      {rows.map((row) => {
+        const { pi, sprints } = row;
+
+        return (
+          <tr
+            key={pi.id}
+            ref={(el) =>
+              el
+                ? cardRefs.current.set(pi.id, el)
+                : cardRefs.current.delete(pi.id)
+            }
+            data-pi-card={pi.id}
+            className={`transition-colors hover:bg-[#f0fdfa] ${
+              highlightId === pi.id ? 'bg-teal-50 ring-1 ring-inset ring-[#0d9488]' : ''
+            }`}
+          >
+            {/* Name */}
+            <td className="px-4 py-4 align-middle">
+              <div className="flex items-center gap-2 min-w-0">
+                <ListTree className="h-4 w-4 flex-shrink-0 text-[#0d9488]" />
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#172b4d] break-words">
+                    {pi.name}
+                  </div>
+
+                  {pi.title && (
+                    <div
+                      className="mt-1 text-xs text-slate-500 break-words"
+                      data-testid="pi-title"
+                    >
+                      {pi.title}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </td>
+
+            {/* Status */}
+            <td className="px-4 py-4 align-middle">
+              <SprintStatusBadge status={row.status} />
+              
+              {row.status === 'COMPLETED' && (
+                <div className="mt-1 text-xs text-slate-400">
+                  Completed PI — iterations can be viewed but not added.
+                </div>
+              )}
+            </td>
+
+            {/* Date Range */}
+            <td className="px-4 py-4 align-middle">
+              <div className="flex items-center gap-2 text-sm text-slate-600 tabular-nums">
+                <CalendarRange className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                <span className="whitespace-nowrap">
                   {formatDay(row.startDate)} – {formatDay(row.endDate)}
-                </div>
-                {(pi.description || pi.goal) && (<p className="flex items-start gap-1.5 text-xs text-[#42526e]">
-                    <Target className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0"/>
-                    <span className="break-words">{pi.description || pi.goal}</span>
-                  </p>)}
-                {row.status === 'COMPLETED' && (<p className="text-[11px] text-slate-400">Completed PI — iterations can be viewed but not added.</p>)}
+                </span>
+              </div>
 
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
-                  <span>
-                    {sprints.length} iteration{sprints.length === 1 ? '' : 's'}
-                    {row.numberRange && ` · ${row.numberRange}`}
-                  </span>
-                  <span className="tabular-nums">
-                    {row.taskTotal > 0 ? `${row.taskDone}/${row.taskTotal} assigned items done` : 'No assigned work items'}
-                  </span>
-                </div>
-                {row.taskTotal > 0 && <ProgressBar value={row.pct} height="sm"/>}
+            </td>
 
-                {sprints.length > 0 && (<div className="border-t border-slate-100 pt-2">
-                    <button type="button" onClick={() => toggle(pi.id)} aria-expanded={isOpen} className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer">
-                      {isOpen ? <ChevronDown className="w-3 h-3"/> : <ChevronRight className="w-3 h-3"/>}
-                      {isOpen ? 'Hide iterations' : 'Show iterations'}
-                    </button>
-                    {isOpen && (<ul className="mt-1.5 divide-y divide-slate-100">
-                        {sprints.map((s) => (<li key={s.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                            <span className="font-semibold text-[#172b4d]">{s.label}</span>
-                            <span className="text-slate-500 tabular-nums flex-1 text-right mr-2">
-                              {formatDay(s.startDate)} – {formatDay(s.endDate)}
-                            </span>
-                            <SprintStatusBadge status={s.status}/>
-                          </li>))}
-                      </ul>)}
-                  </div>)}
-              </div>);
-            })}
-        </div>)}
+            {/* Iterations */}
+            <td className="px-4 py-4 align-middle">
+              <div className="text-sm text-slate-600">
+                {sprints.length} iteration{sprints.length === 1 ? '' : 's'}
+                {row.numberRange && ` · ${row.numberRange}`}
+              </div>
+            </td>
+
+            {/* Progress */}
+            <td className="px-4 py-4 align-middle">
+              <div className="space-y-2">
+                {row.taskTotal > 0 ? (
+                  <>
+                    <ProgressBar value={row.pct} height="sm" />
+                    <div className="text-xs text-slate-500 tabular-nums">
+                      {row.taskDone}/{row.taskTotal} assigned items done
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-500">
+                    No assigned work items
+                  </span>
+                )}
+              </div>
+            </td>
+
+            {/* Actions */}
+            <td className="px-4 py-4 align-middle">
+             <div className="flex flex-col items-start justify-center gap-2">
+                {canCreate && row.status !== 'COMPLETED' && (
+                  <button
+                    type="button"
+                    onClick={() => openCreateIteration(pi)}
+                    className="text-xs font-semibold text-[#0f766e] hover:underline"
+                    data-testid="pi-create-iteration"
+                  >
+                    + Create
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => onOpenIterations(pi.id)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0052cc] hover:underline"
+                  data-testid="open-pi-iterations"
+                >
+                  Open
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+)}
 
       <CreatePIModal projectId={projectId} isOpen={showCreate} onClose={() => setShowCreate(false)} onCreated={(pi) => {
             setHighlightId(pi.id);

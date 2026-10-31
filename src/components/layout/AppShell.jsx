@@ -96,6 +96,30 @@ export const AppShell = () => {
         mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+// Collapse sidebar by default on Iterations pages
+useEffect(() => {
+  if (mainRef.current) {
+    mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  const isIterationsPage =
+    /^\/admin\/ECOMM4\.0\/e-commerce-platform\/iterations(?:\/|$)/.test(
+      location.pathname
+    );
+
+  if (isIterationsPage) {
+    setSidebarWidth((prev) => {
+      if (prev > SIDEBAR_ICON_ONLY_BELOW) {
+        lastExpandedWidthRef.current = prev;
+      }
+
+      storeSidebarWidth(SIDEBAR_MIN_WIDTH);
+      return SIDEBAR_MIN_WIDTH;
+    });
+  }
+}, [location.pathname]);
     return (<div className="flex h-screen overflow-hidden bg-[#f4f6f9]">
       {/* Desktop sidebar */}
       <div className={`hidden lg:flex flex-shrink-0 ${sidebarResizing ? 'transition-none' : 'transition-all duration-300'}`}>
@@ -117,9 +141,9 @@ export const AppShell = () => {
             <Menu className="w-5 h-5"/>
           </button>)}
         <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-thin relative z-0 scroll-smooth">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 animate-fade-in">
-            <Outlet />
-          </div>
+         <div className="w-full max-w-none min-w-0 mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 animate-fade-in">
+  <Outlet />
+</div>
         </main>
       </div>
     </div>);

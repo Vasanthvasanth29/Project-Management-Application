@@ -16,10 +16,14 @@ export const IssueField = ({ label, children, stacked = false, editing = false, 
     </span>);
     const cellClassName = `fe-value min-w-0 break-words flex-1 rounded-md -mx-1 px-1 py-0.5 transition-colors text-left ${onEdit ? 'cursor-pointer hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:bg-slate-100' : ''}`;
     return (<div className={`flex gap-1.5 min-w-0 group/if ${stacked ? 'flex-col gap-0.5' : 'items-start'}`}>
-      <span className="w-36 sm:w-40 flex-shrink-0 fe-label">
-        {label}
-      </span>
-      {editing ? (<span className="leading-5 min-w-0 flex-1">{children}</span>) : onEdit ? (
+<span className="w-36 sm:w-40 flex-shrink-0 whitespace-normal break-words leading-4 fe-label font-bold text-slate-800 ">
+  {label}
+</span>
+     {editing ? (
+  <span className="leading-5 min-w-0 flex-1 whitespace-normal break-words">
+    {children}
+  </span>
+) : onEdit ? (
         // Edit affordance rendered as a real button so the row is reachable
         // and activatable with the keyboard (Tab + Enter/Space), not only by
         // mouse. `children` for an editable row must not contain buttons.

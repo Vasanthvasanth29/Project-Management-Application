@@ -135,9 +135,20 @@ export const IssueDetailsSection = ({ task, onOpenIssue, defaultOpen = true, }) 
     // detail layouts are left untouched (single auto-flowing grid above).
     // Core rows (Type/Status) always show; optional rows follow the config.
     if (!isPlanningItem) {
-        const applicationCiField = (<IssueField key="ci-l" label="Application CI (as per CMDB)">
-        <IssueChips values={task.applicationCis} mono/>
-      </IssueField>);
+const applicationCiField = (
+  <IssueField
+    key="ci-l"
+    label={
+      <>
+        Application CI
+        <br />
+        (as per CMDB)
+      </>
+    }
+  >
+    <IssueChips values={task.applicationCis} mono />
+  </IssueField>
+);
         const parentField = (<IssueField key="parent-r" label="Parent Link">
         {typeParent ? <ParentLink parent={typeParent} onOpen={onOpenIssue}/> : undefined}
       </IssueField>);
@@ -197,7 +208,7 @@ export const IssueDetailsSection = ({ task, onOpenIssue, defaultOpen = true, }) 
         // height (wrapping chips, badges). Height comes purely from content —
         // trailing right-side cells are padded with hidden placeholders on
         // desktop so extra left fields keep falling into the left column.
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+       <div className="grid grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)] gap-x-0 gap-y-3">
           {(() => {
                 const leftAll = [...leftFields, ...customFieldLeft];
                 const rightAll = [...rightFields, ...customFieldRight];

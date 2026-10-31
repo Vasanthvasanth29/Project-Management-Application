@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
@@ -33,6 +33,7 @@ const WORK_QUEUE_SELECTION_ID = '__work_queue__';
 export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     const isCompletedView = view === 'completed';
     const navigate = useNavigate();
+    const location = useLocation();
     // Registers this page's action toolbar into module header row 2 (right of
     // the tab strip) — see IterationHeaderActionsContext.
     const setHeaderActions = useContext(IterationHeaderActionsContext);
@@ -151,16 +152,32 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     const [selectedIssueIds, setSelectedIssueIds] = useState([]);
     // Per-iteration expand/collapse — the active iteration starts expanded so the page
     // opens with a visible issue list, exactly like the reference backlog view.
-    const [expandedSprintIds, setExpandedSprintIds] = useState({});
-    const isSprintOpen = (sprintId) => expandedSprintIds[sprintId] !== undefined
+const [expandedSprintIds, setExpandedSprintIds] = useState({});
+const [isAllSprintsCollapsed, setIsAllSprintsCollapsed] = useState(false);
+// Whenever the user returns to this page (the route changes back to Iterations),
+// expand every iteration. This also works when the parent layout keeps this
+// component mounted while navigating between pages.
+useEffect(() => {
+    const expanded = {};
+    projectSprints.forEach((sprint) => {
+        expanded[sprint.id] = true;
+    });
+    setExpandedSprintIds(expanded);
+    setIsAllSprintsCollapsed(false);
+}, [location.pathname, projectId]);
+const isSprintOpen = (sprintId) =>
+    expandedSprintIds[sprintId] !== undefined
         ? expandedSprintIds[sprintId]
         : sprintId === defaultSprint.id;
-    const toggleSprintOpen = (sprintId) => {
-        setExpandedSprintIds((prev) => ({
-            ...prev,
-            [sprintId]: !(prev[sprintId] !== undefined ? prev[sprintId] : sprintId === defaultSprint.id),
-        }));
-    };
+
+const toggleSprintOpen = (sprintId) => {
+    setExpandedSprintIds((prev) => ({
+        ...prev,
+        [sprintId]: !(prev[sprintId] !== undefined
+            ? prev[sprintId]
+            : sprintId === defaultSprint.id),
+    }));
+};
     // The Work Queue card reuses the SAME expandedSprintIds accordion state
     // (keyed by the sentinel id) so its chevron, selection and the right-panel
     // table collapse stay in lockstep with the iteration cards' behaviour.
@@ -170,13 +187,23 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     // Global "Collapse All" — writes an explicit collapsed flag for every sprint into
     // the SAME expandedSprintIds state the individual chevrons use, so all cards fold
     // at once while each chevron keeps toggling independently afterwards.
-    const collapseAllSprints = () => {
+const collapseAllSprints = () => {
+    if (!isAllSprintsCollapsed) {
         const collapsed = {};
         projectSprints.forEach((sprint) => {
             collapsed[sprint.id] = false;
         });
         setExpandedSprintIds(collapsed);
-    };
+        setIsAllSprintsCollapsed(true);
+    } else {
+        const expanded = {};
+        projectSprints.forEach((sprint) => {
+            expanded[sprint.id] = true;
+        });
+        setExpandedSprintIds(expanded);
+        setIsAllSprintsCollapsed(false);
+    }
+};
     // Per-sprint open menus (only one row menu / status switcher open at a time)
     const [moreMenuSprintId, setMoreMenuSprintId] = useState(null);
     const [statusDropdownSprintId, setStatusDropdownSprintId] = useState(null);
