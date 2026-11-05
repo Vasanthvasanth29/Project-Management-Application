@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
@@ -33,6 +33,7 @@ const WORK_QUEUE_SELECTION_ID = '__work_queue__';
 export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     const isCompletedView = view === 'completed';
     const navigate = useNavigate();
+    const location = useLocation();
     // Registers this page's action toolbar into module header row 2 (right of
     // the tab strip) — see IterationHeaderActionsContext.
     const setHeaderActions = useContext(IterationHeaderActionsContext);
@@ -178,13 +179,34 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     };
     // State
     const [selectedIssueIds, setSelectedIssueIds] = useState([]);
-    const isSprintOpen = (sprintId) => expandedSprintIds[sprintId] !== undefined
-        ? expandedSprintIds[sprintId]
-        : sprintId === (matchedRequestedSprint ? matchedRequestedSprint.id : defaultSprint.id);
+    const [isAllSprintsCollapsed, setIsAllSprintsCollapsed] = useState(false);
+
+    // Whenever the user returns to this page without a specific requested sprint,
+    // expand every iteration.
+    useEffect(() => {
+        if (!matchedRequestedSprint) {
+            const expanded = {};
+            projectSprints.forEach((sprint) => {
+                expanded[sprint.id] = true;
+            });
+            setExpandedSprintIds(expanded);
+            setIsAllSprintsCollapsed(false);
+        }
+    }, [location.pathname, projectId, matchedRequestedSprint]);
+
+    const activeTargetSprintId = matchedRequestedSprint ? matchedRequestedSprint.id : defaultSprint.id;
+
+    const isSprintOpen = (sprintId) =>
+        expandedSprintIds[sprintId] !== undefined
+            ? expandedSprintIds[sprintId]
+            : sprintId === activeTargetSprintId;
+
     const toggleSprintOpen = (sprintId) => {
         setExpandedSprintIds((prev) => ({
             ...prev,
-            [sprintId]: !(prev[sprintId] !== undefined ? prev[sprintId] : sprintId === (matchedRequestedSprint ? matchedRequestedSprint.id : defaultSprint.id)),
+            [sprintId]: !(prev[sprintId] !== undefined
+                ? prev[sprintId]
+                : sprintId === activeTargetSprintId),
         }));
     };
     // The Work Queue card reuses the SAME expandedSprintIds accordion state
@@ -196,13 +218,23 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     // Global "Collapse All" — writes an explicit collapsed flag for every sprint into
     // the SAME expandedSprintIds state the individual chevrons use, so all cards fold
     // at once while each chevron keeps toggling independently afterwards.
-    const collapseAllSprints = () => {
+const collapseAllSprints = () => {
+    if (!isAllSprintsCollapsed) {
         const collapsed = {};
         projectSprints.forEach((sprint) => {
             collapsed[sprint.id] = false;
         });
         setExpandedSprintIds(collapsed);
-    };
+        setIsAllSprintsCollapsed(true);
+    } else {
+        const expanded = {};
+        projectSprints.forEach((sprint) => {
+            expanded[sprint.id] = true;
+        });
+        setExpandedSprintIds(expanded);
+        setIsAllSprintsCollapsed(false);
+    }
+};
     // Per-sprint open menus (only one row menu / status switcher open at a time)
     const [moreMenuSprintId, setMoreMenuSprintId] = useState(null);
     const [statusDropdownSprintId, setStatusDropdownSprintId] = useState(null);

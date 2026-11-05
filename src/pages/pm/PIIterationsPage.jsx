@@ -192,6 +192,45 @@ const STATUS_PRIORITY = {
   COMPLETED: 2,
 };
 
+const STATUS_DISPLAY_LABELS = {
+  ALL: 'All Statuses',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  PLANNED: 'Planned',
+  ACTIVE: 'Active',
+};
+
+export const toInitialCapsStatus = (st) => {
+  if (!st) return '';
+  const key = String(st).toUpperCase().replace(/\s+/g, '_');
+  if (STATUS_DISPLAY_LABELS[key]) return STATUS_DISPLAY_LABELS[key];
+  return st
+    .toLowerCase()
+    .split(/[\s_]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+export const getProgressStyles = (status) => {
+  const norm = String(status || '').toUpperCase().replace(/\s+/g, '_');
+  if (norm === 'IN_PROGRESS' || norm === 'ACTIVE') {
+    return {
+      textClass: 'text-[#2563eb] font-medium',
+      barColor: 'bg-[#2563eb]',
+    };
+  }
+  if (norm === 'COMPLETED') {
+    return {
+      textClass: 'text-[#059669] font-medium',
+      barColor: 'bg-[#10b981]',
+    };
+  }
+  return {
+    textClass: 'text-slate-600 font-normal',
+    barColor: 'bg-slate-300',
+  };
+};
+
 export function calculateNextIterationNumber(targetPi, allSprints) {
   let piNumber = targetPi?.number;
   if (!Number.isInteger(piNumber) && targetPi?.name) {
@@ -660,7 +699,7 @@ export const PIIterationsPage = () => {
               >
                 <Filter className="w-3.5 h-3.5 text-slate-500" />
                 <span>
-                  Status {statusFilter !== 'ALL' ? `(${statusFilter.replace('_', ' ')})` : ''}
+                  Status {statusFilter !== 'ALL' ? `(${toInitialCapsStatus(statusFilter)})` : ''}
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
               </button>
@@ -683,7 +722,7 @@ export const PIIterationsPage = () => {
                       className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between hover:bg-slate-50 cursor-pointer ${statusFilter === st.id ? 'text-teal-700 font-semibold bg-teal-50/50' : 'text-slate-700'
                         }`}
                     >
-                      <span>{st.label}</span>
+                      <span>{toInitialCapsStatus(st.label || st.id)}</span>
                       {statusFilter === st.id && <Check className="w-3 h-3 text-teal-600" />}
                     </button>
                   ))}
@@ -790,21 +829,28 @@ export const PIIterationsPage = () => {
 
                         {/* Status Badge */}
                         <td className="py-3.5 px-4">
-                          {info.status === 'Completed' && (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#ecfdf5] text-[#059669]">
-                              Completed
-                            </span>
-                          )}
-                          {info.status === 'In Progress' && (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#eff6ff] text-[#2563eb]">
-                              In Progress
-                            </span>
-                          )}
-                          {info.status === 'Planned' && (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#f1f5f9] text-[#475569]">
-                              Planned
-                            </span>
-                          )}
+                          {(() => {
+                            const norm = (info.status || '').toUpperCase().replace(/\s+/g, '_');
+                            if (norm === 'COMPLETED') {
+                              return (
+                                <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#ecfdf5] text-[#059669]">
+                                  Completed
+                                </span>
+                              );
+                            }
+                            if (norm === 'IN_PROGRESS' || norm === 'ACTIVE') {
+                              return (
+                                <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#eff6ff] text-[#2563eb]">
+                                  In Progress
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#f1f5f9] text-[#475569]">
+                                Planned
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Work Items Count */}
@@ -814,18 +860,22 @@ export const PIIterationsPage = () => {
 
                         {/* Progress Percentage + Bar */}
                         <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-600 text-[11px] font-normal w-8 tabular-nums">
-                              {info.progressPct}%
-                            </span>
-                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${info.progressPct === 100 ? 'bg-[#10b981]' : 'bg-[#0d9488]'
-                                  }`}
-                                style={{ width: `${info.progressPct}%` }}
-                              />
-                            </div>
-                          </div>
+                          {(() => {
+                            const { textClass, barColor } = getProgressStyles(info.status);
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[11px] w-8 tabular-nums ${textClass}`}>
+                                  {info.progressPct}%
+                                </span>
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                                    style={{ width: `${info.progressPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Actions Dropdown Button */}

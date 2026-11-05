@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+  import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, FolderKanban, Plus, Mail, Clock, Activity, CheckCircle, TrendingUp, Sparkles, CheckSquare, ArrowRight, CalendarRange, RefreshCw, AlertTriangle, XCircle, Eye, Settings2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
@@ -75,8 +75,8 @@ export const AdminDashboard = () => {
         { key: 'BUG', label: 'Bugs' },
         { key: 'SPRINT', label: 'Iterations' },
     ];
-    return (<div className="space-y-6 animate-fade-in w-full max-w-[960px]">
-      {/* Header */}
+return (
+  <div className="space-y-6 animate-fade-in w-full min-w-0 max-w-none">      {/* Header */}
       <div className="relative overflow-hidden rounded-2xl p-6 lg:p-8" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #4338ca 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #6366f1 0%, transparent 50%)' }}/>
         <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
