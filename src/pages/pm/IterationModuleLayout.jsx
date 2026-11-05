@@ -8,7 +8,7 @@ export const resolveIterationPaths = (pathname) => {
     return {
         basePath: idx >= 0 ? pathname.substring(0, idx) + '/iterations' : '/iterations',
         backUrl: idx > 0 ? pathname.substring(0, idx) : '/',
-        // Project → Product Increments (where PIs are created). Outside the
+        // Project → Program Increments (where PIs are created). Outside the
         // module (e.g. the workspace's embedded overview) the current path IS
         // the project workspace.
         productIncrementsUrl: `${idx > 0 ? pathname.substring(0, idx) : pathname.replace(/\/+$/, '')}?tab=product-increments`,

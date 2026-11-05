@@ -75,7 +75,7 @@ const ACTIVITY_COLORS = {
     OTHER: '#6b7280',
 };
 function classifyActivity(act) {
-    const action = act.action.toLowerCase();
+    const action = (act?.action || '').toLowerCase();
     const entityType = act.entityType.toUpperCase();
     if (entityType === 'TASK') {
         if (action.includes('created') || action.includes('created task'))
@@ -235,10 +235,10 @@ export const ActivityPage = () => {
         if (role === 'TEAM_LEADER') {
             const myTeams = teams.filter((t) => t.teamLeaderId === currentUser.id || t.id === currentUser.teamId);
             const myTeamIds = myTeams.map((t) => t.id);
-            return projects.filter((p) => p.teamIds.some((tid) => myTeamIds.includes(tid)));
+            return (projects || []).filter((p) => p?.teamIds?.some((tid) => myTeamIds.includes(tid)));
         }
         const myTeamId = currentUser.teamId;
-        return projects.filter((p) => (myTeamId && p.teamIds.includes(myTeamId)) || tasks.some((t) => t.assigneeId === currentUser.id && t.projectId === p.id));
+        return (projects || []).filter((p) => (myTeamId && p?.teamIds?.includes(myTeamId)) || (tasks || []).some((t) => t?.assigneeId === currentUser?.id && t?.projectId === p?.id));
     }, [currentUser, projects, teams, tasks]);
     const accessibleProjectIds = useMemo(() => new Set(accessibleProjects.map((p) => p.id)), [accessibleProjects]);
     // Role-scoped activities
@@ -392,7 +392,7 @@ export const ActivityPage = () => {
                         projIdForSearch = bugs.find((b) => b.id === act.entityId)?.projectId;
                 }
                 const matchProject = projects.find((p) => p.id === projIdForSearch);
-                const matchesProject = matchProject?.name.toLowerCase().includes(q) ?? false;
+                const matchesProject = matchProject?.name ? matchProject.name.toLowerCase().includes(q) : false;
                 if (!matchesAction && !matchesEntity && !matchesType && !matchesUser && !matchesProject)
                     return false;
             }

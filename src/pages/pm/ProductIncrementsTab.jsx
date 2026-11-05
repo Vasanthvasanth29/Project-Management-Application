@@ -14,7 +14,7 @@ import { CreateIterationModal } from './CreateIterationModal';
 // Timezone-free "07 Jan 2030" from the ISO date parts.
 const formatDay = formatIsoDay;
 /**
- * Project → Product Increments: the project-level home for PIs. Lists the
+ * Project → Program Increments: the project-level home for PIs. Lists the
  * project's PIs (dates, goal, status, generated iterations, progress) and is
  * the entry point for Create PI — the shared CreatePIModal, always scoped to
  * THIS project, so a PI can never be created under another one.
@@ -112,7 +112,7 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
             <ListTree className="w-4 h-4 text-[#0d9488]"/>
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-bold text-[#172b4d]">Product Increments</h2>
+            <h2 className="text-sm font-bold text-[#172b4d]">Program Increments</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Plan this project's PIs, then add iterations to each active or planned PI with the dates you choose. Iterations are numbered from their PI (PI 6 → 6.1, 6.2 …).
             </p>
@@ -127,7 +127,7 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
       </div>
 
       {rows.length === 0 ? (<div className="card">
-          <EmptyState icon={ListTree} title="No Product Increments yet" description={canCreate
+          <EmptyState icon={ListTree} title="No Program Increments yet" description={canCreate
                 ? 'Create the first PI for this project. Iterations always belong to a PI, so they can be planned once a PI exists.'
                 : 'This project has no PI yet. A Project Manager or Team Leader creates PIs here; iterations are generated inside them.'} action={canCreate ? { label: 'Create PI', onClick: () => setShowCreate(true) } : undefined}/>
         </div>) : (

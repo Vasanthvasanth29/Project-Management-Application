@@ -8,7 +8,7 @@ import { SprintStatusBadge } from '../../components/common/Badges';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { ProgressBar } from '../../components/common/ProgressBar';
 import { WorkItemIcon } from '../../components/common/WorkItemIcon';
-import { toUrlId } from '../../utils/idUtils';
+import { toUrlId, matchId } from '../../utils/idUtils';
 import { getIssueKeyPrefix } from '../../utils/projectIdentity';
 import { issuePath, appHref } from '../../utils/issueUrl';
 import { canManageSprint, canStartSprint, canCompleteSprint, canEditSprint, canArchiveSprint, canDeleteSprint, isCancelledWorkItem, displayTaskStatus, getStatusLabel } from '../../utils/roleUtils';
@@ -72,6 +72,23 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
             { key: 'planned', label: 'PLANNED', pis: planSections.planned },
         ], [isCompletedView, planSections]);
     const hasVisibleSections = overviewSections.some((s) => s.pis.length > 0);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedIteration = searchParams.get('iteration');
+    const requestedSprintId = searchParams.get('sprintId') || searchParams.get('sprint');
+    const requestedPiId = searchParams.get('pi');
+
+    const matchedRequestedSprint = useMemo(() => {
+        if (requestedSprintId) {
+            const byId = projectSprints.find((s) => matchId(s.id, requestedSprintId));
+            if (byId) return byId;
+        }
+        if (requestedIteration) {
+            const byNum = projectSprints.find((s) => s.iterationNumber === requestedIteration || s.name === requestedIteration);
+            if (byNum) return byNum;
+        }
+        return undefined;
+    }, [projectSprints, requestedSprintId, requestedIteration]);
+
     // Determine active sprint or fallback
     const defaultSprint = useMemo(() => {
         return (projectSprints.find((s) => s.status === 'ACTIVE') ||
@@ -91,7 +108,12 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
                 createdAt: '2024-09-04T00:00:00Z',
             });
     }, [projectSprints, projectId]);
-    const [selectedSprintId, setSelectedSprintId] = useState(defaultSprint.id);
+    const initialSprintId = matchedRequestedSprint ? matchedRequestedSprint.id : defaultSprint.id;
+    const [selectedSprintId, setSelectedSprintId] = useState(initialSprintId);
+    // Per-iteration expand/collapse — the active or requested iteration starts expanded
+    const [expandedSprintIds, setExpandedSprintIds] = useState(() => ({
+        [initialSprintId]: true,
+    }));
     // True when the left-panel Work Queue card (not an iteration) drives the
     // right panel. Never selectable on the Completed Iterations history view.
     const isWorkQueueSelected = !isCompletedView && selectedSprintId === WORK_QUEUE_SELECTION_ID;
@@ -100,10 +122,17 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     // selecting another sprint from its own row menu must never snap back to the active one.
     // The Work Queue sentinel selection is always valid and is never re-mapped.
     useEffect(() => {
+        if (matchedRequestedSprint) {
+            if (selectedSprintId !== matchedRequestedSprint.id) {
+                setSelectedSprintId(matchedRequestedSprint.id);
+            }
+            setExpandedSprintIds((prev) => ({ ...prev, [matchedRequestedSprint.id]: true }));
+            return;
+        }
         setSelectedSprintId((prev) => prev === WORK_QUEUE_SELECTION_ID || projectSprints.some((s) => s.id === prev)
             ? prev
             : defaultSprint.id);
-    }, [projectSprints, defaultSprint]);
+    }, [projectSprints, defaultSprint, matchedRequestedSprint?.id]);
     const currentSprint = projectSprints.find((s) => s.id === selectedSprintId) || defaultSprint;
     const currentPiNumber = useMemo(() => (currentSprint ? piNumberForSprint(currentSprint, pis) : undefined), [currentSprint, pis]);
     const currentDaysLeft = useMemo(() => {
@@ -150,34 +179,36 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     };
     // State
     const [selectedIssueIds, setSelectedIssueIds] = useState([]);
-    // Per-iteration expand/collapse — the active iteration starts expanded so the page
-    // opens with a visible issue list, exactly like the reference backlog view.
-const [expandedSprintIds, setExpandedSprintIds] = useState({});
-const [isAllSprintsCollapsed, setIsAllSprintsCollapsed] = useState(false);
-// Whenever the user returns to this page (the route changes back to Iterations),
-// expand every iteration. This also works when the parent layout keeps this
-// component mounted while navigating between pages.
-useEffect(() => {
-    const expanded = {};
-    projectSprints.forEach((sprint) => {
-        expanded[sprint.id] = true;
-    });
-    setExpandedSprintIds(expanded);
-    setIsAllSprintsCollapsed(false);
-}, [location.pathname, projectId]);
-const isSprintOpen = (sprintId) =>
-    expandedSprintIds[sprintId] !== undefined
-        ? expandedSprintIds[sprintId]
-        : sprintId === defaultSprint.id;
+    const [isAllSprintsCollapsed, setIsAllSprintsCollapsed] = useState(false);
 
-const toggleSprintOpen = (sprintId) => {
-    setExpandedSprintIds((prev) => ({
-        ...prev,
-        [sprintId]: !(prev[sprintId] !== undefined
-            ? prev[sprintId]
-            : sprintId === defaultSprint.id),
-    }));
-};
+    // Whenever the user returns to this page without a specific requested sprint,
+    // expand every iteration.
+    useEffect(() => {
+        if (!matchedRequestedSprint) {
+            const expanded = {};
+            projectSprints.forEach((sprint) => {
+                expanded[sprint.id] = true;
+            });
+            setExpandedSprintIds(expanded);
+            setIsAllSprintsCollapsed(false);
+        }
+    }, [location.pathname, projectId, matchedRequestedSprint]);
+
+    const activeTargetSprintId = matchedRequestedSprint ? matchedRequestedSprint.id : defaultSprint.id;
+
+    const isSprintOpen = (sprintId) =>
+        expandedSprintIds[sprintId] !== undefined
+            ? expandedSprintIds[sprintId]
+            : sprintId === activeTargetSprintId;
+
+    const toggleSprintOpen = (sprintId) => {
+        setExpandedSprintIds((prev) => ({
+            ...prev,
+            [sprintId]: !(prev[sprintId] !== undefined
+                ? prev[sprintId]
+                : sprintId === activeTargetSprintId),
+        }));
+    };
     // The Work Queue card reuses the SAME expandedSprintIds accordion state
     // (keyed by the sentinel id) so its chevron, selection and the right-panel
     // table collapse stay in lockstep with the iteration cards' behaviour.
@@ -241,7 +272,7 @@ const collapseAllSprints = () => {
     // Create Iteration modal state — iteration creation always runs through the
     // shared PI-aware modal (Project → PI → Iteration), optionally preselecting
     // the PI whose "+ Add Iteration" opened it. PIs themselves are created at
-    // project level (Project → Product Increments), not on this page.
+    // project level (Project → Program Increments), not on this page.
     const [createIterationPiId, setCreateIterationPiId] = useState(undefined);
     const { productIncrementsUrl } = useIterationPaths();
     // Linked Pages tailored to this project
@@ -289,11 +320,11 @@ const collapseAllSprints = () => {
             // Search query
             if (searchQuery.trim()) {
                 const query = searchQuery.toLowerCase();
-                const matchesKey = issue.key.toLowerCase().includes(query);
-                const matchesTitle = issue.title.toLowerCase().includes(query);
-                const matchesEpic = issue.epicName.toLowerCase().includes(query);
-                const matchesRelease = issue.releaseTag.toLowerCase().includes(query);
-                const matchesAssignee = issue.assigneeName.toLowerCase().includes(query);
+                const matchesKey = (issue.key || '').toLowerCase().includes(query);
+                const matchesTitle = (issue.title || '').toLowerCase().includes(query);
+                const matchesEpic = (issue.epicName || '').toLowerCase().includes(query);
+                const matchesRelease = (issue.releaseTag || '').toLowerCase().includes(query);
+                const matchesAssignee = (issue.assigneeName || '').toLowerCase().includes(query);
                 if (!matchesKey && !matchesTitle && !matchesEpic && !matchesRelease && !matchesAssignee) {
                     return false;
                 }
@@ -307,7 +338,8 @@ const collapseAllSprints = () => {
             // Quick filter: Only My Work Items
             if (onlyMyIssues) {
                 const myName = currentUser?.name?.toLowerCase() || '';
-                if (!issue.assigneeName.toLowerCase().includes(myName.split(' ')[0])) {
+                const myFirst = (myName.split(' ')[0] || '');
+                if (myFirst && !(issue.assigneeName || '').toLowerCase().includes(myFirst)) {
                     return false;
                 }
             }
@@ -443,7 +475,7 @@ const collapseAllSprints = () => {
     const actuallyStartSprint = (sprint) => {
         updateSprintStatus(sprint.id, 'ACTIVE');
         selectSprint(sprint.id);
-        toast.success(`${formatSprintTitle(sprint).split(' [')[0]} started`);
+        toast.success(`Iteration "${sprint.iterationNumber || sprint.name}" is now Active`);
     };
     const handleStartSprint = (sprint) => {
         if (!canStartSprint(sprintRole)) {
@@ -454,7 +486,8 @@ const collapseAllSprints = () => {
         setSelectedSprintId(sprint.id);
         const activeSprint = sprints.find((s) => s.projectId === sprint.projectId && s.status === 'ACTIVE' && s.id !== sprint.id);
         if (activeSprint) {
-            setStartConflict({ target: sprint, active: activeSprint });
+            const activeName = activeSprint.iterationNumber || activeSprint.name || 'active iteration';
+            toast.error(`Cannot start iteration. Iteration "${activeName}" is currently Active. The previous iteration must be Completed before starting a new one.`);
             return;
         }
         actuallyStartSprint(sprint);
@@ -678,10 +711,21 @@ const collapseAllSprints = () => {
     const iterationSource = useMemo(() => projectSprints.filter((s) => !s.isArchived), [projectSprints]);
     const [iterationQuery, setIterationQuery] = useState('');
     const [statusTab, setStatusTab] = useState(isCompletedView ? 'COMPLETED' : 'ALL');
-    // `?pi=<id>` (Project → Product Increments → "Open iterations") opens the
+
+    useEffect(() => {
+        if (matchedRequestedSprint) {
+            if (matchedRequestedSprint.status === 'COMPLETED' && statusTab === 'ACTIVE') {
+                setStatusTab('ALL');
+            } else if (matchedRequestedSprint.status === 'ACTIVE' && (statusTab === 'COMPLETED' || statusTab === 'UPCOMING')) {
+                setStatusTab('ALL');
+            } else if (matchedRequestedSprint.status === 'PLANNED' && (statusTab === 'ACTIVE' || statusTab === 'COMPLETED')) {
+                setStatusTab('ALL');
+            }
+        }
+    }, [matchedRequestedSprint]);
+
+    // `?pi=<id>` (Project → Program Increments → "Open iterations") opens the
     // list pre-filtered to that PI; unknown or foreign ids fall back to All.
-    const [searchParams, setSearchParams] = useSearchParams();
-    const requestedPiId = searchParams.get('pi');
     const isProjectPi = (id) => !!id && projectPis.some((p) => p.id === id);
     const [piGroupFilter, setPiGroupFilter] = useState(() => isProjectPi(requestedPiId) ? requestedPiId : 'ALL');
     const [iterFilterOpen, setIterFilterOpen] = useState(false);
@@ -692,10 +736,14 @@ const collapseAllSprints = () => {
         setPiGroupFilter(key);
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
-            if (isProjectPi(key))
+            if (key !== 'ALL')
                 next.set('pi', key);
             else
                 next.delete('pi');
+            // Clear sticky requested sprint parameters when switching/clearing PI filter
+            next.delete('iteration');
+            next.delete('sprintId');
+            next.delete('sprint');
             return next;
         }, { replace: true });
     };
@@ -710,21 +758,47 @@ const collapseAllSprints = () => {
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [requestedPiId]);
+    // Iteration-list scope: status tab + PI filter + text search over the real
+    // iteration fields (identifier, stored number/name and goal).
+    const iterationPiGroups = useMemo(() => groupSprintsByPi(iterationSource, pis, projectId), [iterationSource, pis, projectId]);
+    const sprintPiKeyById = useMemo(() => {
+        const map = new Map();
+        iterationPiGroups.forEach((group) => group.sprints.forEach((s) => map.set(s.id, group.key)));
+        return map;
+    }, [iterationPiGroups]);
+
+    // Iterations scoped by the selected PI filter
+    const scopedByPiIterations = useMemo(() => {
+        if (piGroupFilter === 'ALL') return iterationSource;
+        return iterationSource.filter((sprint) => {
+            const groupKey = sprintPiKeyById.get(sprint.id);
+            if (groupKey === piGroupFilter) return true;
+            if (sprint.piId && sprint.piId === piGroupFilter) return true;
+            const matchingGroup = iterationPiGroups.find((g) => g.key === piGroupFilter || g.piId === piGroupFilter);
+            return matchingGroup?.sprints.some((s) => s.id === sprint.id);
+        });
+    }, [iterationSource, piGroupFilter, sprintPiKeyById, iterationPiGroups]);
+
     // The PI the page is scoped to (a real PI record), and its own iterations.
     const piFilterPi = piGroupFilter !== 'ALL' ? projectPis.find((p) => p.id === piGroupFilter) : undefined;
-    const piFilterIterations = useMemo(() => (piFilterPi
-        ? iterationSource.filter((s) => s.piId === piFilterPi.id).sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''))
-        : []), [piFilterPi, iterationSource]);
-    const showPiEmpty = !!piFilterPi && piFilterIterations.length === 0;
+    const piFilterIterations = scopedByPiIterations;
+    const showPiEmpty = piGroupFilter !== 'ALL' && scopedByPiIterations.length === 0;
+
     // Never show another PI's iteration while scoped to a PI: move the
     // selection to this PI's first iteration (the Work Queue card stays allowed).
     useEffect(() => {
-        if (!piFilterPi || isCompletedView || piFilterIterations.length === 0)
+        if (piGroupFilter === 'ALL' || isCompletedView || scopedByPiIterations.length === 0)
             return;
-        setSelectedSprintId((prev) => prev === WORK_QUEUE_SELECTION_ID || piFilterIterations.some((s) => s.id === prev)
-            ? prev
-            : piFilterIterations[0].id);
-    }, [piFilterPi, piFilterIterations, isCompletedView]);
+        setSelectedSprintId((prev) => {
+            if (matchedRequestedSprint && scopedByPiIterations.some((s) => s.id === matchedRequestedSprint.id)) {
+                return matchedRequestedSprint.id;
+            }
+            return prev === WORK_QUEUE_SELECTION_ID || scopedByPiIterations.some((s) => s.id === prev)
+                ? prev
+                : scopedByPiIterations[0].id;
+        });
+    }, [piGroupFilter, scopedByPiIterations, isCompletedView, matchedRequestedSprint]);
+
     // RIGHT panel — work-item toolbar: Assignee / Component / Status / PI /
     // More Filters (the existing quick filters keep their behaviour) over the
     // filtered rows.
@@ -744,25 +818,20 @@ const collapseAllSprints = () => {
         setMoreFiltersOpen(false);
         setIterFilterOpen(false);
     };
+
     // The Completed history view lives on its own route (`.../iterations/completed`),
     // so the left-panel tab follows the view prop whenever the route switches.
     useEffect(() => {
         setStatusTab(isCompletedView ? 'COMPLETED' : 'ALL');
     }, [isCompletedView]);
-    // Iteration-list scope: status tab + PI filter + text search over the real
-    // iteration fields (identifier, stored number/name and goal).
-    const iterationPiGroups = useMemo(() => groupSprintsByPi(iterationSource, pis, projectId), [iterationSource, pis, projectId]);
-    const sprintPiKeyById = useMemo(() => {
-        const map = new Map();
-        iterationPiGroups.forEach((group) => group.sprints.forEach((s) => map.set(s.id, group.key)));
-        return map;
-    }, [iterationPiGroups]);
+
     const statusCounts = useMemo(() => ({
-        ALL: iterationSource.length,
-        ACTIVE: iterationSource.filter((s) => s.status === 'ACTIVE').length,
-        UPCOMING: iterationSource.filter((s) => s.status === 'PLANNED').length,
-        COMPLETED: iterationSource.filter((s) => s.status === 'COMPLETED').length,
-    }), [iterationSource]);
+        ALL: scopedByPiIterations.length,
+        ACTIVE: scopedByPiIterations.filter((s) => s.status === 'ACTIVE').length,
+        UPCOMING: scopedByPiIterations.filter((s) => s.status === 'PLANNED').length,
+        COMPLETED: scopedByPiIterations.filter((s) => s.status === 'COMPLETED').length,
+    }), [scopedByPiIterations]);
+
     const matchesIterationFilters = (sprint) => {
         if (statusTab === 'ACTIVE' && sprint.status !== 'ACTIVE')
             return false;
@@ -770,8 +839,13 @@ const collapseAllSprints = () => {
             return false;
         if (statusTab === 'COMPLETED' && sprint.status !== 'COMPLETED')
             return false;
-        if (piGroupFilter !== 'ALL' && sprintPiKeyById.get(sprint.id) !== piGroupFilter)
-            return false;
+        if (piGroupFilter !== 'ALL') {
+            const groupKey = sprintPiKeyById.get(sprint.id);
+            const matchesPi = groupKey === piGroupFilter ||
+                (sprint.piId && sprint.piId === piGroupFilter) ||
+                iterationPiGroups.find((g) => g.key === piGroupFilter || g.piId === piGroupFilter)?.sprints.some((s) => s.id === sprint.id);
+            if (!matchesPi) return false;
+        }
         const query = iterationQuery.trim().toLowerCase();
         if (query) {
             const haystack = [getSprintIdentifier(sprint), sprint.name, sprint.iterationNumber, sprint.goal]
@@ -783,36 +857,6 @@ const collapseAllSprints = () => {
         return true;
     };
     const visibleIterations = iterationSource.filter(matchesIterationFilters);
-    // Summary of the PI selected in the iteration filter — every value comes
-    // from real records: stored PI dates/goal (PIs created via Create PI) or the
-    // min/max of its iterations' dates, the plan's derived PI status, and
-    // DONE vs. total store work items actually assigned (task.sprintId) to its
-    // iterations. Deliberately NOT getIssuesForSprint: that list is topped up
-    // with domain sample items (buildSprintIssuesMap), which are not real data.
-    const selectedPiSummary = useMemo(() => {
-        if (piGroupFilter === 'ALL')
-            return null;
-        const group = iterationPiGroups.find((g) => g.key === piGroupFilter);
-        if (!group)
-            return null;
-        const pi = pis.find((p) => p.id === group.piId);
-        const planEntry = piPlan.find((p) => p.id === (group.piId || group.key));
-        const sprintIds = new Set(group.sprints.map((s) => s.id));
-        const piTasks = tasks.filter((t) => sprintIds.has(t.sprintId) && !isCancelledWorkItem(t));
-        const done = piTasks.filter((t) => t.status === 'DONE').length;
-        return {
-            label: pi?.title ? `${group.label} — ${pi.title}` : group.label,
-            goal: pi?.description || pi?.goal,
-            pi,
-            startDate: pi?.startDate || planEntry?.startDate,
-            endDate: pi?.endDate || planEntry?.endDate,
-            status: pi ? piStatusOf(pi, sprints) : group.sprints.length ? planEntry?.status : undefined,
-            iterationCount: group.sprints.length,
-            taskTotal: piTasks.length,
-            taskDone: done,
-            pct: piTasks.length ? Math.round((done / piTasks.length) * 100) : 0,
-        };
-    }, [piGroupFilter, iterationPiGroups, pis, piPlan, tasks, sprints]);
     // Completed history stays grouped under its original PI (existing behaviour).
     const visiblePiGroups = useMemo(() => (isCompletedView ? groupSprintsByPi(visibleIterations, pis, projectId) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -869,8 +913,17 @@ const collapseAllSprints = () => {
             return;
         if (visibleIdsKey.split(',').includes(selectedSprintId))
             return;
-        setSelectedSprintId(visibleIdsKey.split(',')[0]);
-    }, [visibleIdsKey, selectedSprintId]);
+        if (matchedRequestedSprint && visibleIdsKey.split(',').includes(matchedRequestedSprint.id)) {
+            if (selectedSprintId !== matchedRequestedSprint.id) {
+                setSelectedSprintId(matchedRequestedSprint.id);
+            }
+            return;
+        }
+        const first = visibleIdsKey.split(',')[0];
+        if (first && selectedSprintId !== first) {
+            setSelectedSprintId(first);
+        }
+    }, [visibleIdsKey, selectedSprintId, matchedRequestedSprint?.id]);
     // Comment counts and dates come from the real work-item record once the issue
     // is materialised, otherwise from the shared issue-comment store.
     const commentCountFor = (issue) => {
@@ -953,6 +1006,16 @@ const collapseAllSprints = () => {
     const selectSprint = (sprintId) => {
         setSelectedSprintId(sprintId);
         openOnlySprint(sprintId);
+        const s = projectSprints.find((sp) => sp.id === sprintId);
+        if (s) {
+            setSearchParams((prev) => {
+                const next = new URLSearchParams(prev);
+                if (s.iterationNumber)
+                    next.set('iteration', s.iterationNumber);
+                next.set('sprintId', s.id);
+                return next;
+            }, { replace: true });
+        }
         // Keep the selected-iteration summary in view when the user picks a card
         // from a scrolled list — the summary is the first block of the right
         // column, so scrolling the page to its top guarantees it sits above the
@@ -1328,8 +1391,8 @@ const collapseAllSprints = () => {
                     e.preventDefault();
                     selectSprint(sprint.id);
                 }
-            }} {...sprintDropProps(sprint)} className={`group relative rounded-lg border px-1.5 py-1 pl-2 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#4c9aff]/40 ${isSelected
-                ? 'border-[#0052cc] bg-[#f7faff] ring-1 ring-[#0052cc]/30 shadow-xs'
+            }} {...sprintDropProps(sprint)} className={`group relative rounded-lg border px-1.5 py-1 pl-2 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#0d9488]/40 ${isSelected
+                ? 'border-[#0d9488] bg-[#f7faff] ring-1 ring-[#0d9488]/30 shadow-xs'
                 : 'border-[#dfe1e6] bg-white hover:border-[#b3d4ff] hover:bg-[#fafbff]'}${dndRingClass('sprint', sprint.id)}`}>
         {/* Thin colored left-edge accent keyed to iteration status */}
         <span aria-hidden="true" className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${accentColor}`}/>
@@ -1551,14 +1614,14 @@ const collapseAllSprints = () => {
             {isCompletedView
                 ? 'Finished iterations will appear here, grouped under their PI, once they are completed.'
                 : projectPis.length === 0
-                    ? `${project?.name} has no PI yet. Iterations are generated inside a PI — create one from the project's Product Increments section.`
+                    ? `${project?.name} has no PI yet. Iterations are generated inside a PI — create one from the project's Program Increments section.`
                     : planSections.completed.length > 0
                         ? `All iterations of ${project?.name} are completed — open Completed Iterations to browse the history.`
                         : `Create the first iteration of ${projectPis[0]?.name} for ${project?.name} to start planning.`}
           </p>
           {!isCompletedView &&
                 (projectPis.length === 0 ? (<button onClick={() => navigate(productIncrementsUrl)} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] text-xs font-bold cursor-pointer">
-                <ListTree className="w-3.5 h-3.5"/> Go to Product Increments
+                <ListTree className="w-3.5 h-3.5"/> Go to Program Increments
               </button>) : (<button onClick={() => openCreateIteration(projectPis.find((p) => canCreateIterationInPi(p, sprints))?.id)} className="mt-4 px-4 py-2 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] text-xs font-bold cursor-pointer">
                 + Create Iteration
               </button>))}
@@ -1617,34 +1680,6 @@ const collapseAllSprints = () => {
               </div>
             </div>
 
-            {selectedPiSummary && (<div className="rounded-lg border border-[#ccfbf1] bg-[#f0fdfa] px-3 py-2 space-y-1.5" data-pi-summary="">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#134e4a] truncate">{selectedPiSummary.label}</span>
-                  {selectedPiSummary.status && <SprintStatusBadge status={selectedPiSummary.status}/>}
-                </div>
-                {canManage && selectedPiSummary.pi && selectedPiSummary.status !== 'COMPLETED' && (<button type="button" onClick={() => openCreateIteration(selectedPiSummary.pi.id)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold text-[#0f766e] bg-white hover:bg-[#ccfbf1] border border-[#99f6e4] transition-colors cursor-pointer" data-testid="summary-create-iteration">
-                    <Plus className="w-3 h-3"/> Create Iteration
-                  </button>)}
-                {selectedPiSummary.startDate && selectedPiSummary.endDate && (<div className="text-[11px] text-[#0f766e] tabular-nums">
-                    {formatSprintDateRange(selectedPiSummary)} {selectedPiSummary.startDate.slice(0, 4)}
-                    {selectedPiSummary.endDate.slice(0, 4) !== selectedPiSummary.startDate.slice(0, 4) && `–${selectedPiSummary.endDate.slice(0, 4)}`}
-                  </div>)}
-                {selectedPiSummary.goal && (<p className="text-[11px] text-[#42526e] line-clamp-2" title={selectedPiSummary.goal}>
-                    {selectedPiSummary.goal}
-                  </p>)}
-                <div className="flex items-center justify-between text-[10px] text-[#6b778c]">
-                  <span>
-                    {selectedPiSummary.iterationCount} iteration{selectedPiSummary.iterationCount === 1 ? '' : 's'}
-                  </span>
-                  <span className="tabular-nums">
-                    {selectedPiSummary.taskTotal > 0
-                    ? `${selectedPiSummary.taskDone}/${selectedPiSummary.taskTotal} assigned items done`
-                    : 'No assigned work items'}
-                  </span>
-                </div>
-                {selectedPiSummary.taskTotal > 0 && <ProgressBar value={selectedPiSummary.pct} height="sm"/>}
-              </div>)}
-
             {/* Status tabs — All / Active / Upcoming / Completed */}
             <div className="flex items-center gap-1 bg-[#f4f5f7] rounded-lg p-1">
               {[
@@ -1673,7 +1708,7 @@ const collapseAllSprints = () => {
                 (the list reserves pb-9 for it). */}
             <div className="relative">
             <div ref={dndListRef} data-iteration-list="" onScroll={(e) => setListShowTop(e.currentTarget.scrollTop > 180)} className="flex flex-col gap-1.5 max-h-[600px] overflow-y-auto pr-0.5 pb-9 scrollbar-thin">
-              {showPiEmpty ? (<div className="rounded-lg border border-dashed border-[#99f6e4] bg-white px-4 py-6 text-center" data-testid="pi-empty-list">
+              {showPiEmpty && piFilterPi ? (<div className="rounded-lg border border-dashed border-[#99f6e4] bg-white px-4 py-6 text-center" data-testid="pi-empty-list">
                   <p className="text-xs font-semibold text-[#134e4a]">{piFilterPi.name} has no iterations yet</p>
                   <p className="text-[11px] text-[#6b778c] mt-0.5">Iterations you create for this PI will be listed here.</p>
                 </div>) : visibleIterations.length === 0 ? (<div className="rounded-lg border border-dashed border-[#dfe1e6] bg-white px-4 py-6 text-center">
@@ -1710,7 +1745,7 @@ const collapseAllSprints = () => {
 
             <div className="flex items-center justify-between gap-2 px-1 text-[11px] text-[#6b778c]">
               <span className="tabular-nums">
-                {visibleIterations.length} of {iterationSource.length} iterations
+                {visibleIterations.length} of {scopedByPiIterations.length} iterations
               </span>
               {(iterationQuery || piGroupFilter !== 'ALL' || statusTab !== (isCompletedView ? 'COMPLETED' : 'ALL')) && (<button type="button" onClick={() => {
                     setIterationQuery('');
@@ -1723,7 +1758,7 @@ const collapseAllSprints = () => {
           </aside>
 
           {/* ============================ RIGHT COLUMN — selected iteration or Work Queue ============================ */}
-          {showPiEmpty && (<section className="min-w-0 bg-white rounded-lg border border-[#dfe1e6] shadow-xs p-8 text-center" data-testid="pi-empty-panel">
+          {showPiEmpty && piFilterPi && (<section className="min-w-0 bg-white rounded-lg border border-[#dfe1e6] shadow-xs p-8 text-center" data-testid="pi-empty-panel">
               <div className="inline-flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#0d9488] text-white text-[11px] font-bold">
                   <ListTree className="w-3 h-3"/> {piFilterPi.name}

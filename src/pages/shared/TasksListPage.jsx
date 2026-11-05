@@ -133,9 +133,9 @@ export const TasksListPage = ({ projectId, showBacklogOnly = false }) => {
         // Search match
         if (search.trim()) {
             const q = search.toLowerCase();
-            const titleMatch = item.title.toLowerCase().includes(q);
-            const descMatch = (item.description || '').toLowerCase().includes(q);
-            const assigneeName = item.assigneeId ? userMap.get(item.assigneeId)?.name.toLowerCase() : '';
+            const titleMatch = (item?.title || '').toLowerCase().includes(q);
+            const descMatch = (item?.description || '').toLowerCase().includes(q);
+            const assigneeName = item?.assigneeId ? (userMap.get(item.assigneeId)?.name || '').toLowerCase() : '';
             const assigneeMatch = assigneeName ? assigneeName.includes(q) : false;
             if (!titleMatch && !descMatch && !assigneeMatch)
                 return false;

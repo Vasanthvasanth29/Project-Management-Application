@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CalendarRange, Clock, AlertTriangle, AlertOctagon, CheckCircle2, Play, ChevronDown, ChevronRight, Link2, Target, ShieldAlert, Ban, UserPlus, ArrowRight, Eye, XCircle, GitBranch, MessageSquareHeart, Flag } from 'lucide-react';
+import { ArrowLeft, CalendarRange, Clock, AlertTriangle, AlertOctagon, CheckCircle2, Play, ChevronDown, ChevronRight, Link2, Target, ShieldAlert, Ban, UserPlus, ArrowRight, Eye, XCircle, GitBranch, MessageSquareHeart, Flag, MoreHorizontal, GripVertical, CheckSquare, Square, FolderKanban, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -39,7 +39,7 @@ const STATUS_LABELS = {
     DONE: 'Mark Done',
 };
 export const SprintDetailPage = () => {
-    const { projectId, projectKey, projectName, sprintId } = useParams();
+    const { projectId, projectKey, projectName, sprintId, piId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuthStore();
     const { projects, sprints, pis, tasks, users, taskDependencies, updateTaskStatus, updateTask, assignTask, } = useAppStore();
@@ -47,6 +47,19 @@ export const SprintDetailPage = () => {
     const [expandedTaskId, setExpandedTaskId] = useState(null);
     const [showReassignFor, setShowReassignFor] = useState(null);
     const [showMoveSprintFor, setShowMoveSprintFor] = useState(null);
+
+    // Multi-selection state for work items
+    const [selectedTaskIds, setSelectedTaskIds] = useState(new Set());
+
+    // Drag-and-drop state
+    const [draggedTasks, setDraggedTasks] = useState([]);
+    const [dragOverSprintId, setDragOverSprintId] = useState(null);
+
+    // Modals state
+    const [confirmMoveData, setConfirmMoveData] = useState(null); // { tasks, targetSprint, targetPi }
+    const [showMovePickerForTasks, setShowMovePickerForTasks] = useState(null);
+    const [openRowMenuTaskId, setOpenRowMenuTaskId] = useState(null);
+
     // PM Task Decision Workflow state
     const [reviewingTaskId, setReviewingTaskId] = useState(null);
     const [reviewStep, setReviewStep] = useState('idle');
@@ -55,8 +68,27 @@ export const SprintDetailPage = () => {
     const [selectedAssigneeId, setSelectedAssigneeId] = useState(null);
     const [selectedTargetSprintId, setSelectedTargetSprintId] = useState(null);
     const [showRetroModal, setShowRetroModal] = useState(false);
-    const project = useMemo(() => projects.find(p => matchProject(p, { projectId, projectKey, projectName })), [projects, projectId, projectKey, projectName]);
+
     const sprint = useMemo(() => sprints.find(s => matchId(s.id, sprintId)), [sprints, sprintId]);
+    const project = useMemo(() => {
+        if (sprint?.projectId) {
+            const found = projects.find(p => p.id === sprint.projectId);
+            if (found) return found;
+        }
+        return projects.find(p => matchProject(p, { projectId, projectKey, projectName }));
+    }, [projects, projectId, projectKey, projectName, sprint]);
+
+    // Close row menu on outside click
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            if (!e.target.closest('[data-row-menu]')) {
+                setOpenRowMenuTaskId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, []);
+
     // Project → PI → Iteration breadcrumb context: which PI owns this iteration.
     const sprintPiNumber = useMemo(() => (sprint ? piNumberForSprint(sprint, pis) : undefined), [sprint, pis]);
     const sprintCrumbLabel = useMemo(() => {
@@ -67,6 +99,30 @@ export const SprintDetailPage = () => {
             : sprint.name;
     }, [sprint]);
     const allProjectSprints = useMemo(() => sprints.filter(s => matchId(s.projectId, project?.id || projectId) && !matchId(s.id, sprintId) && s.status !== 'COMPLETED'), [sprints, project, projectId, sprintId]);
+
+    // Program Increments and their Iterations for this project (for cross-PI moves)
+    const projectPis = useMemo(() => {
+        if (!project) return [];
+        return pis.filter(p => p.projectId === project.id).sort((a, b) => (b.number || 0) - (a.number || 0));
+    }, [pis, project]);
+
+    const iterationsGroupedByPi = useMemo(() => {
+        if (!project) return [];
+        return projectPis.map(pi => {
+            const piSprints = sprints
+                .filter(s => s.piId === pi.id && !s.isArchived)
+                .sort((a, b) => {
+                    const seqA = parseFloat(a.iterationNumber || '0') || 0;
+                    const seqB = parseFloat(b.iterationNumber || '0') || 0;
+                    return seqA - seqB;
+                });
+            return {
+                pi,
+                sprints: piSprints,
+            };
+        });
+    }, [projectPis, sprints, project]);
+
     const sprintTasks = useMemo(() => {
         if (!sprint)
             return [];
@@ -154,13 +210,133 @@ export const SprintDetailPage = () => {
         toast.success(`Priority changed to ${priority.charAt(0) + priority.slice(1).toLowerCase()}`);
     }, [updateTask]);
     const handleBack = useCallback(() => {
+        const effectivePiId = piId || sprint?.piId;
+        if (effectivePiId) {
+            navigate(`/pi-iterations/${encodeURIComponent(effectivePiId)}`);
+            return;
+        }
         if (project) {
             navigate(getProjectUrl(project, currentUser?.role || 'PROJECT_MANAGER'));
         }
         else {
             navigate(`/pm/projects/${toUrlId(projectId)}`);
         }
-    }, [navigate, project, projectId, currentUser?.role]);
+    }, [navigate, piId, sprint, project, projectId, currentUser?.role]);
+
+    // Work item multi-selection handlers
+    const toggleSelectTask = useCallback((taskId) => {
+        setSelectedTaskIds(prev => {
+            const next = new Set(prev);
+            if (next.has(taskId)) {
+                next.delete(taskId);
+            } else {
+                next.add(taskId);
+            }
+            return next;
+        });
+    }, []);
+
+    const toggleSelectAll = useCallback(() => {
+        if (selectedTaskIds.size === sprintTasks.length) {
+            setSelectedTaskIds(new Set());
+        } else {
+            setSelectedTaskIds(new Set(sprintTasks.map(t => t.id)));
+        }
+    }, [selectedTaskIds.size, sprintTasks]);
+
+    // Drag-and-drop handlers for moving work items across iterations
+    const handleTaskDragStart = useCallback((e, task) => {
+        let tasksToDrag = [];
+        if (selectedTaskIds.has(task.id)) {
+            tasksToDrag = sprintTasks.filter(t => selectedTaskIds.has(t.id));
+        } else {
+            tasksToDrag = [task];
+            setSelectedTaskIds(new Set([task.id]));
+        }
+        setDraggedTasks(tasksToDrag);
+        e.dataTransfer.effectAllowed = 'move';
+        try {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ taskIds: tasksToDrag.map(t => t.id) }));
+        } catch {
+            // ignore
+        }
+    }, [selectedTaskIds, sprintTasks]);
+
+    const handleTaskDragEnd = useCallback(() => {
+        setDraggedTasks([]);
+        setDragOverSprintId(null);
+    }, []);
+
+    const handleSprintDragOver = useCallback((e, targetSprint, targetPi) => {
+        e.preventDefault();
+        if (!draggedTasks || draggedTasks.length === 0) return;
+
+        if (targetSprint.id === sprint?.id) {
+            e.dataTransfer.dropEffect = 'none';
+            return;
+        }
+
+        const isCompletedSprint = targetSprint.status === 'COMPLETED' || targetSprint.iterationStatus === 'Completed';
+        const isCompletedPi = targetPi.status === 'COMPLETED';
+        if (isCompletedSprint || isCompletedPi) {
+            e.dataTransfer.dropEffect = 'none';
+            return;
+        }
+
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverSprintId !== targetSprint.id) {
+            setDragOverSprintId(targetSprint.id);
+        }
+    }, [draggedTasks, sprint?.id, dragOverSprintId]);
+
+    const handleSprintDragLeave = useCallback((e, targetSprint) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            if (dragOverSprintId === targetSprint.id) {
+                setDragOverSprintId(null);
+            }
+        }
+    }, [dragOverSprintId]);
+
+    const handleSprintDrop = useCallback((e, targetSprint, targetPi) => {
+        e.preventDefault();
+        setDragOverSprintId(null);
+        if (!draggedTasks || draggedTasks.length === 0) return;
+
+        if (targetSprint.id === sprint?.id) {
+            setDraggedTasks([]);
+            return;
+        }
+
+        const isCompletedSprint = targetSprint.status === 'COMPLETED' || targetSprint.iterationStatus === 'Completed';
+        const isCompletedPi = targetPi.status === 'COMPLETED';
+        if (isCompletedSprint || isCompletedPi) {
+            toast.error(`${targetSprint.name} is completed. Work items cannot be moved into a completed iteration.`);
+            setDraggedTasks([]);
+            return;
+        }
+
+        const moving = [...draggedTasks];
+        setDraggedTasks([]);
+        setConfirmMoveData({
+            tasks: moving,
+            targetSprint,
+            targetPi,
+        });
+    }, [draggedTasks, sprint?.id]);
+
+    const executeConfirmMove = useCallback(() => {
+        if (!confirmMoveData) return;
+        const { tasks: tasksToMove, targetSprint, targetPi } = confirmMoveData;
+
+        tasksToMove.forEach(t => {
+            updateTask(t.id, { sprintId: targetSprint.id });
+        });
+
+        toast.success(`Successfully moved ${tasksToMove.length} work item${tasksToMove.length > 1 ? 's' : ''} to ${targetSprint.name} (${targetPi?.name || 'PI'})`);
+        setSelectedTaskIds(new Set());
+        setConfirmMoveData(null);
+        setShowMovePickerForTasks(null);
+    }, [confirmMoveData, updateTask]);
     // PM Task Decision Workflow handlers
     const startReview = useCallback((taskId) => {
         // Close any expanded row and reset workflow state
@@ -322,11 +498,11 @@ export const SprintDetailPage = () => {
       <div className="relative overflow-hidden rounded-2xl p-6 lg:p-8" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #0d9488 0%, transparent 50%)' }}/>
         <div className="relative z-10">
-          {/* Breadcrumb: Back to Project | {project} | PI {n} | {iteration} */}
+          {/* Breadcrumb: Back to Iterations / Project | {project} | PI {n} | {iteration} */}
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-400 mb-4 flex-wrap">
             <button onClick={handleBack} className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
               <ArrowLeft className="w-3.5 h-3.5"/>
-              Back to Project
+              {piId || sprint?.piId ? 'Back to Iterations' : 'Back to Project'}
             </button>
             <ChevronRight className="w-3 h-3 opacity-60"/>
             <button onClick={handleBack} className="hover:text-white transition-colors cursor-pointer">
@@ -466,31 +642,55 @@ export const SprintDetailPage = () => {
         </div>
       </div>
 
-      {/* Task Review */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#f1f5f9]">
-          <h2 className="text-sm font-bold text-[#1a1d23] flex items-center gap-2 font-display">
-            <CheckCircle2 className="w-4 h-4 text-[#0d9488]"/>
-            Iteration Tasks
-            <span className="text-[10px] font-bold text-[#9ca3af] bg-[#f1f5f9] px-2 py-0.5 rounded-lg ml-1">
-              {sprintTasks.length} total &middot; {remainingTasks.length} remaining
-            </span>
-          </h2>
-        </div>
-
-        {sprintTasks.length === 0 ? (<div className="text-center py-8 text-[#9ca3af]">
-            <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30"/>
-            <p className="text-xs">No tasks in this iteration</p>
-          </div>) : (<div className="space-y-2">
-            {/* Table header */}
-            <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#9ca3af] border-b border-[#f1f5f9]">
-              <div className="col-span-4">Task</div>
-              <div className="col-span-1">Status</div>
-              <div className="col-span-1">Priority</div>
-              <div className="col-span-2">Assignee</div>
-              <div className="col-span-2">Due Date</div>
-              <div className="col-span-2 text-right">Actions</div>
+      {/* Iteration Tasks & Cross-PI Destination Panel */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        {/* Left: Tasks Table */}
+        <div className="xl:col-span-8 2xl:col-span-9 card p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#f1f5f9]">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#0d9488]"/>
+              <h2 className="text-sm font-bold text-[#1a1d23] font-display">Iteration Tasks</h2>
+              <span className="text-[10px] font-bold text-[#9ca3af] bg-[#f1f5f9] px-2 py-0.5 rounded-lg ml-1">
+                {sprintTasks.length} total &middot; {remainingTasks.length} remaining
+              </span>
             </div>
+            <div className="flex items-center gap-2">
+              {selectedTaskIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowMovePickerForTasks(sprintTasks.filter(t => selectedTaskIds.has(t.id)))}
+                  className="px-3 py-1.5 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Move Selected ({selectedTaskIds.size})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {sprintTasks.length === 0 ? (<div className="text-center py-8 text-[#9ca3af]">
+              <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30"/>
+              <p className="text-xs">No tasks in this iteration</p>
+            </div>) : (<div className="space-y-2">
+              {/* Table header */}
+              <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#9ca3af] border-b border-[#f1f5f9] items-center">
+                <div className="col-span-4 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={sprintTasks.length > 0 && selectedTaskIds.size === sprintTasks.length}
+                    onChange={toggleSelectAll}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                    title={selectedTaskIds.size === sprintTasks.length ? 'Deselect all' : 'Select all'}
+                  />
+                  <span>Task</span>
+                </div>
+                <div className="col-span-1">Component</div>
+                <div className="col-span-1">Status</div>
+                <div className="col-span-1">Priority</div>
+                <div className="col-span-2">Assignee</div>
+                <div className="col-span-1">Due Date</div>
+                <div className="col-span-2 text-right">Actions</div>
+              </div>
 
             {sprintTasks
                 .sort((a, b) => {
@@ -516,14 +716,31 @@ export const SprintDetailPage = () => {
                 const isHighPriority = task.priority === 'HIGH' || task.priority === 'CRITICAL';
                 const isCompleted = task.status === 'DONE';
                 const taskCancelled = isCancelledWorkItem(task);
-                return (<div key={task.id} className={`rounded-xl border overflow-hidden transition-colors ${taskOverdue ? 'border-[#fecaca] bg-[#fef2f2]/20'
+                const isSelected = selectedTaskIds.has(task.id);
+                const isDragged = draggedTasks.some(dt => dt.id === task.id);
+                return (<div key={task.id}
+                        draggable={!taskCancelled}
+                        onDragStart={(e) => handleTaskDragStart(e, task)}
+                        onDragEnd={handleTaskDragEnd}
+                        className={`rounded-xl border overflow-hidden transition-all ${
+                          isSelected ? 'ring-2 ring-teal-500/50 bg-teal-50/20' : ''
+                        } ${taskOverdue ? 'border-[#fecaca] bg-[#fef2f2]/20'
                         : isBlocked ? 'border-[#fecaca] bg-[#fef2f2]/10'
                             : task.isFlagged ? 'border-[#fcd34d] bg-[#fefce8]/40'
                                 : isHighPriority ? 'border-[#fde68a] bg-[#fffbeb]/20'
-                                    : 'border-[#f1f5f9] bg-white hover:bg-[#f8fafc]'}`}>
+                                    : 'border-[#f1f5f9] bg-white hover:bg-[#f8fafc]'} ${
+                          isDragged ? 'opacity-40' : ''
+                        }`}>
                     {/* Task row */}
                     <div className="grid grid-cols-12 gap-2 items-center px-3 py-2.5">
                       <div className="col-span-4 flex items-center gap-2 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectTask(task.id)}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer flex-shrink-0"
+                        />
+                        <GripVertical className="w-3.5 h-3.5 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing flex-shrink-0" />
                         <button onClick={() => {
                         if (isReviewing) {
                             cancelReview();
@@ -531,7 +748,7 @@ export const SprintDetailPage = () => {
                         else {
                             setExpandedTaskId(isExpanded ? null : task.id);
                         }
-                    }} className="flex-shrink-0">
+                    }} className="flex-shrink-0 cursor-pointer">
                           {(isExpanded || isReviewing) ? (<ChevronDown className="w-3 h-3 text-[#9ca3af]"/>) : (<ChevronRight className="w-3 h-3 text-[#9ca3af]"/>)}
                         </button>
                         <div className="min-w-0">
@@ -555,6 +772,11 @@ export const SprintDetailPage = () => {
                         </div>
                       </div>
                       <div className="col-span-1">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 truncate max-w-full">
+                          {task.component || 'General'}
+                        </span>
+                      </div>
+                      <div className="col-span-1">
                         <StatusBadge status={task.status} resolution={task.resolution}/>
                       </div>
                       <div className="col-span-1">
@@ -566,30 +788,56 @@ export const SprintDetailPage = () => {
                             <span className="text-[10px] text-[#4b5563] truncate">{assignee.name}</span>
                           </div>) : (<span className="text-[10px] text-[#9ca3af] italic">Unassigned</span>)}
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <span className={`text-[10px] ${getDueDateClass(task.dueDate)}`}>
                           {getDueDateLabel(task.dueDate)}
                         </span>
                       </div>
-                      <div className="col-span-2 flex items-center justify-end gap-1">
+                      <div className="col-span-2 flex items-center justify-end gap-1 relative" data-row-menu>
                         {/* Review button - only for non-DONE tasks */}
-                        {!isCompleted && (<button onClick={() => startReview(task.id)} className={`text-[9px] font-bold px-2 py-1 rounded-lg transition-colors ${isReviewing
+                        {!isCompleted && (<button onClick={() => startReview(task.id)} className={`text-[9px] font-bold px-2 py-1 rounded-lg transition-colors cursor-pointer ${isReviewing
                             ? 'bg-[#7c3aed] text-white'
                             : 'bg-[#ede9fe] text-[#7c3aed] hover:bg-[#ddd6fe]'}`}>
                             <Eye className="w-3 h-3 inline mr-0.5"/>
                             Review
                           </button>)}
                         {/* Quick status advance */}
-                        {nextStatus && !isCompleted && (<button onClick={() => handleStatusChange(task.id, nextStatus)} className="text-[9px] font-bold px-2 py-1 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] transition-colors" title={`Move to ${nextStatus.replace(/_/g, ' ')}`}>
+                        {nextStatus && !isCompleted && (<button onClick={() => handleStatusChange(task.id, nextStatus)} className="text-[9px] font-bold px-2 py-1 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] transition-colors cursor-pointer" title={`Move to ${nextStatus.replace(/_/g, ' ')}`}>
                             {STATUS_LABELS[task.status] || 'Advance'}
                           </button>)}
                         <button onClick={() => {
                         // Canonical issue URL — the workspace ignores ?taskId,
                         // so open the issue's own detail page.
                         navigate(issuePath(task));
-                    }} className="text-[9px] font-semibold px-2 py-1 rounded-lg bg-[#f1f5f9] text-[#6b7280] hover:bg-[#e2e8f0] transition-colors">
+                    }} className="text-[9px] font-semibold px-2 py-1 rounded-lg bg-[#f1f5f9] text-[#6b7280] hover:bg-[#e2e8f0] transition-colors cursor-pointer">
                           View
                         </button>
+                        {/* 3-dot row action menu */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenRowMenuTaskId(openRowMenuTaskId === task.id ? null : task.id)}
+                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            title="More actions"
+                          >
+                            <MoreHorizontal className="w-3.5 h-3.5" />
+                          </button>
+                          {openRowMenuTaskId === task.id && (
+                            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-30 animate-in fade-in-50 duration-100 text-left">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenRowMenuTaskId(null);
+                                  setShowMovePickerForTasks([task]);
+                                }}
+                                className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-800 flex items-center gap-2 cursor-pointer font-medium"
+                              >
+                                <ArrowRight className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Move to Iteration...</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -872,6 +1120,107 @@ export const SprintDetailPage = () => {
                   </div>);
             })}
           </div>)}
+        </div>
+
+        {/* Right: Destination Iterations Panel (Drag & Drop Target across PIs) */}
+        <div className="xl:col-span-4 2xl:col-span-3 card p-5 space-y-4">
+          <div className="border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2 text-slate-900 font-bold text-xs font-display">
+              <FolderKanban className="w-4 h-4 text-teal-600" />
+              <span>Destination Iterations</span>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1 leading-normal">
+              Drag work items onto any valid iteration to move them across Program Increments.
+            </p>
+          </div>
+
+          <div className="space-y-4 max-h-[700px] overflow-y-auto pr-1">
+            {iterationsGroupedByPi.map(({ pi, sprints: piSprints }) => {
+              const isPiCompleted = pi.status === 'COMPLETED';
+              return (
+                <div key={pi.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 px-1 pt-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-teal-500" />
+                      {pi.name} {pi.title ? `– ${pi.title}` : ''}
+                    </span>
+                    {isPiCompleted && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-semibold uppercase">
+                        Completed
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {piSprints.map((s) => {
+                      const isCurrent = s.id === sprint?.id;
+                      const isCompleted = s.status === 'COMPLETED' || s.iterationStatus === 'Completed' || isPiCompleted;
+                      const isDragOver = dragOverSprintId === s.id;
+                      const sTasks = tasks.filter(t => t.sprintId === s.id && !isCancelledWorkItem(t));
+                      const sDone = sTasks.filter(t => t.status === 'DONE').length;
+                      const sPct = s.status === 'COMPLETED' ? 100 : s.status === 'PLANNED' ? 0 : sTasks.length > 0 ? Math.round((sDone / sTasks.length) * 100) : 0;
+
+                      return (
+                        <div
+                          key={s.id}
+                          onDragOver={(e) => handleSprintDragOver(e, s, pi)}
+                          onDragLeave={(e) => handleSprintDragLeave(e, s)}
+                          onDrop={(e) => handleSprintDrop(e, s, pi)}
+                          className={`p-2.5 rounded-xl border text-xs transition-all ${
+                            isDragOver
+                              ? 'border-teal-500 bg-teal-50/80 shadow-md ring-2 ring-teal-500/30'
+                              : isCurrent
+                              ? 'border-slate-200 bg-slate-50 opacity-70'
+                              : isCompleted
+                              ? 'border-slate-100 bg-slate-50/50 opacity-60'
+                              : 'border-slate-200 bg-white hover:border-teal-300 hover:shadow-2xs'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <div className="min-w-0 flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900">{s.iterationNumber || s.name}</span>
+                              {s.title && <span className="text-[11px] text-slate-600 truncate">{s.title}</span>}
+                            </div>
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded ${
+                              isCurrent
+                                ? 'bg-teal-100 text-teal-800'
+                                : isCompleted
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : s.status === 'ACTIVE'
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {isCurrent ? 'Current' : isCompleted ? 'Completed' : s.status === 'ACTIVE' ? 'In Progress' : 'Planned'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100">
+                            <span>{sTasks.length} items &middot; {sPct}%</span>
+                            {!isCurrent && !isCompleted && selectedTaskIds.size > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setConfirmMoveData({
+                                    tasks: sprintTasks.filter(t => selectedTaskIds.has(t.id)),
+                                    targetSprint: s,
+                                    targetPi: pi,
+                                  });
+                                }}
+                                className="text-[10px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+                              >
+                                Move Here
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* PM Decision Summary */}
@@ -941,6 +1290,187 @@ export const SprintDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedTaskIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700/80 animate-in fade-in-50 slide-in-from-bottom-4 duration-150">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-bold flex items-center justify-center">
+              {selectedTaskIds.size}
+            </span>
+            <span className="text-xs font-semibold">work item{selectedTaskIds.size > 1 ? 's' : ''} selected</span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700" />
+
+          <button
+            type="button"
+            onClick={() => setShowMovePickerForTasks(sprintTasks.filter(t => selectedTaskIds.has(t.id)))}
+            className="px-3.5 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Move to Iteration...</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedTaskIds(new Set())}
+            className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmMoveData && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in-50 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Move Work Items</h3>
+                  <p className="text-xs text-slate-500">Confirm cross-iteration transfer</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConfirmMoveData(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                Are you sure you want to move{' '}
+                <strong className="text-slate-900 font-semibold">{confirmMoveData.tasks.length} work item{confirmMoveData.tasks.length > 1 ? 's' : ''}</strong>{' '}
+                from <span className="font-semibold text-slate-800">{sprint.name}</span> to{' '}
+                <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                  Iteration {confirmMoveData.targetSprint.iterationNumber || confirmMoveData.targetSprint.name} ({confirmMoveData.targetPi?.name || 'PI'})
+                </span>?
+              </div>
+
+              <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
+                {confirmMoveData.tasks.map(t => (
+                  <div key={t.id} className="p-2.5 flex items-center justify-between text-xs">
+                    <div className="min-w-0 pr-2">
+                      <p className="font-medium text-slate-900 truncate">{t.title}</p>
+                      <p className="text-[10px] text-slate-500">{t.component || 'General'} &middot; Priority: {t.priority}</p>
+                    </div>
+                    <StatusBadge status={t.status} />
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[11px] text-slate-500">
+                All work item details (title, description, priority, assignee, attachments, status) will be preserved.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setConfirmMoveData(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeConfirmMove}
+                className="px-4 py-2 text-xs font-bold bg-[#0d9488] hover:bg-[#0f766e] text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Confirm Move ({confirmMoveData.tasks.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Target Iteration Picker Modal */}
+      {showMovePickerForTasks && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in-50 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Select Target Iteration</h3>
+                <p className="text-xs text-slate-500">Moving {showMovePickerForTasks.length} work item(s)</p>
+              </div>
+              <button
+                onClick={() => setShowMovePickerForTasks(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="py-3 max-h-80 overflow-y-auto space-y-4 pr-1">
+              {iterationsGroupedByPi.map(({ pi, sprints: piSprints }) => {
+                const isPiCompleted = pi.status === 'COMPLETED';
+                return (
+                  <div key={pi.id} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 px-1">
+                      <span>{pi.name} {pi.title ? `– ${pi.title}` : ''}</span>
+                      {isPiCompleted && (
+                        <span className="text-[10px] text-slate-400 font-normal">Completed (Locked)</span>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {piSprints.map(s => {
+                        const isCurrent = s.id === sprint?.id;
+                        const isCompleted = s.status === 'COMPLETED' || s.iterationStatus === 'Completed' || isPiCompleted;
+                        return (
+                          <button
+                            key={s.id}
+                            disabled={isCurrent || isCompleted}
+                            onClick={() => {
+                              setConfirmMoveData({
+                                tasks: showMovePickerForTasks,
+                                targetSprint: s,
+                                targetPi: pi,
+                              });
+                              setShowMovePickerForTasks(null);
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                              isCurrent
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : isCompleted
+                                ? 'bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+                                : 'bg-white hover:bg-teal-50 hover:border-teal-300 border border-slate-200 text-slate-800 cursor-pointer shadow-2xs'
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <span className="font-semibold">{s.iterationNumber || s.name}</span>
+                              {s.title && <span className="ml-1.5 text-slate-600">{s.title}</span>}
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium capitalize bg-slate-100 text-slate-600">
+                              {isCurrent ? 'Current' : isCompleted ? 'Completed' : s.status?.toLowerCase() || 'planned'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowMovePickerForTasks(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Retrospective Modal */}
       {showRetroModal && (<SprintRetrospectiveModal sprint={sprint} isOpen={true} onClose={() => setShowRetroModal(false)}/>)}

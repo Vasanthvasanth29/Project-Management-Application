@@ -16,8 +16,24 @@ export class ErrorBoundary extends Component {
     };
     handleGoHome = () => {
         this.setState({ hasError: false, error: null });
-        // App root under Vite's `base` ('/agile/'), not the server root.
-        window.location.href = import.meta.env.BASE_URL;
+        try {
+            const rawAuth = localStorage.getItem('auth-storage');
+            const authState = rawAuth ? JSON.parse(rawAuth) : null;
+            const role = authState?.state?.currentUser?.role;
+            const dashboardMap = {
+                ADMIN: '/agile/admin',
+                PROJECT_MANAGER: '/agile/pm',
+                TEAM_LEADER: '/agile/tl',
+                MEMBER: '/agile/member',
+            };
+            if (role && dashboardMap[role]) {
+                window.location.href = dashboardMap[role];
+                return;
+            }
+        } catch (e) {
+            // fallback to default
+        }
+        window.location.href = import.meta.env.BASE_URL || '/agile/';
     };
     render() {
         if (this.state.hasError) {

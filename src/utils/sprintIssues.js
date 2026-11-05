@@ -166,45 +166,47 @@ export const buildSprintIssuesMap = (params) => {
                 updatedDate: t.completedAt ? t.completedAt.split('T')[0] : '2026-09-08'
             });
         });
-        // Supplement with domain seed items to reach rich production iteration volume
-        domainSeedData.forEach((seed, idx) => {
-            if (result.length >= 14)
-                return;
-            const seedId = `gen-${projectKey}-${sprintIndex}-${idx}`;
-            const keyNum = keyBase + 500 + idx;
-            const seedKey = `${projectKey}-${keyNum}`;
-            // This seed instance has been materialised (opened or dragged) and may
-            // already live in any iteration — never re-emit it here.
-            if (materializedSeedKeys.has(seedKey.toUpperCase()))
-                return;
-            if (claimedTitles.has(seed.title.trim().toLowerCase()))
-                return;
-            // An assignee chosen in the transition dialog overrides the seeded member
-            // (including "Unassigned" — an explicit empty override).
-            const overridden = Object.prototype.hasOwnProperty.call(issueAssigneeOverrides, seedId);
-            const assigneeUser = overridden
-                ? users.find((u) => u.id === issueAssigneeOverrides[seedId])
-                : projectTeamMembers[idx % projectTeamMembers.length];
-            const status = issueStatusOverrides[seedId] ?? seed.status;
-            result.push({
-                id: seedId,
-                key: `${projectKey}-${keyNum}`,
-                title: seed.title,
-                type: seed.type,
-                priority: seed.priority,
-                status,
-                resolution: status === 'DONE' ? issueResolutions[seedId] : undefined,
-                releaseTag: `${projectKey} PI24`,
-                epicName: seed.epic,
-                epicColor: getEpicColor(seed.epic),
-                assigneeName: overridden ? assigneeUser?.name || 'Unassigned' : assigneeUser ? assigneeUser.name : seed.assignee,
-                assigneeInitial: overridden ? assigneeUser?.name[0] || 'U' : assigneeUser ? assigneeUser.name[0] : seed.assignee[0],
-                assigneeAvatarColor: assigneeUser?.avatarColor || '#0284c7',
-                avatarUrl: assigneeUser?.avatarUrl,
-                storyPoints: seed.points,
-                updatedDate: '2026-09-08'
+        // Supplement with domain seed items only if sprint has no direct store tasks
+        if (sprintTasks.length === 0) {
+            domainSeedData.forEach((seed, idx) => {
+                if (result.length >= 12)
+                    return;
+                const seedId = `gen-${projectKey}-${sprintIndex}-${idx}`;
+                const keyNum = keyBase + 500 + idx;
+                const seedKey = `${projectKey}-${keyNum}`;
+                // This seed instance has been materialised (opened or dragged) and may
+                // already live in any iteration — never re-emit it here.
+                if (materializedSeedKeys.has(seedKey.toUpperCase()))
+                    return;
+                if (claimedTitles.has(seed.title.trim().toLowerCase()))
+                    return;
+                // An assignee chosen in the transition dialog overrides the seeded member
+                // (including "Unassigned" — an explicit empty override).
+                const overridden = Object.prototype.hasOwnProperty.call(issueAssigneeOverrides, seedId);
+                const assigneeUser = overridden
+                    ? users.find((u) => u.id === issueAssigneeOverrides[seedId])
+                    : projectTeamMembers[idx % projectTeamMembers.length];
+                const status = issueStatusOverrides[seedId] ?? seed.status;
+                result.push({
+                    id: seedId,
+                    key: `${projectKey}-${keyNum}`,
+                    title: seed.title,
+                    type: seed.type,
+                    priority: seed.priority,
+                    status,
+                    resolution: status === 'DONE' ? issueResolutions[seedId] : undefined,
+                    releaseTag: `${projectKey} PI24`,
+                    epicName: seed.epic,
+                    epicColor: getEpicColor(seed.epic),
+                    assigneeName: overridden ? assigneeUser?.name || 'Unassigned' : assigneeUser ? assigneeUser.name : seed.assignee,
+                    assigneeInitial: overridden ? assigneeUser?.name[0] || 'U' : assigneeUser ? assigneeUser.name[0] : seed.assignee[0],
+                    assigneeAvatarColor: assigneeUser?.avatarColor || '#0284c7',
+                    avatarUrl: assigneeUser?.avatarUrl,
+                    storyPoints: seed.points,
+                    updatedDate: '2026-09-08'
+                });
             });
-        });
+        }
         map[sprint.id] = result;
     });
     return map;

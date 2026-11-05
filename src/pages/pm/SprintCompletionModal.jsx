@@ -6,7 +6,7 @@ import { ProgressBar } from '../../components/common/ProgressBar';
 import { toast } from 'sonner';
 export const SprintCompletionModal = ({ sprint, isOpen, onClose, onComplete, }) => {
     const { tasks, users, updateSprintStatus, handleIncompleteTasks, addActivity, addNotification } = useAppStore();
-    const [selectedAction, setSelectedAction] = useState('MOVE_TO_NEXT_SPRINT');
+    const [selectedAction, setSelectedAction] = useState('REMAIN_IN_COMPLETED');
     const [confirmed, setConfirmed] = useState(false);
     const sprintTasks = useMemo(() => tasks.filter((t) => t.sprintId === sprint.id), [tasks, sprint.id]);
     const doneTasks = sprintTasks.filter((t) => t.status === 'DONE');

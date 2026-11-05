@@ -482,7 +482,7 @@ export const IssueSearchPage = () => {
                 // Connectors are always offered; only fields filter by the typed prefix.
                 pool = [
                     ...LOGICAL_SUGGESTIONS,
-                    ...QUERY_FIELDS.filter((f) => f.startsWith(ctx.typed.toLowerCase())).map((f) => ({
+                    ...QUERY_FIELDS.filter((f) => f.startsWith((ctx?.typed || '').toLowerCase())).map((f) => ({
                         label: f, value: f, hint: FIELD_HINTS[f],
                     })),
                 ];
@@ -504,7 +504,7 @@ export const IssueSearchPage = () => {
                 filter = '';
         }
         const lowered = filter.toLowerCase();
-        const filtered = pool.filter((i) => i.label.toLowerCase().startsWith(lowered)).slice(0, 15);
+        const filtered = pool.filter((i) => (i?.label || '').toLowerCase().startsWith(lowered)).slice(0, 15);
         setSuggestions(filtered);
         // Arrow keys fire a trailing native 'select' event; keep the highlighted row while keyboard-navigating.
         setActiveSuggestion((prev) => (preserveActive && filtered.length > 0 ? Math.min(prev, filtered.length - 1) : 0));

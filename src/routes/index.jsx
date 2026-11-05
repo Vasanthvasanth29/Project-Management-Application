@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { getDashboardPath } from '../utils/roleUtils';
@@ -55,7 +55,7 @@ import { SettingsPage } from '../pages/shared/SettingsPage';
 import { BugsPage } from '../pages/shared/BugsPage';
 import { BugDetailPage } from '../pages/shared/BugDetailPage';
 import { FlaggedTasksPage } from '../pages/shared/FlaggedTasksPage';
-import { BlankIterationsPage } from '../pages/pm/BlankIterationsPage';
+import { PIIterationsPage } from '../pages/pm/PIIterationsPage';
 // Guard Component
 // ADMIN is a full-access system administrator: it bypasses every role gate so
 // an admin can open any route regardless of allowedRoles.
@@ -110,6 +110,16 @@ const RootRoute = () => {
     }
     return <Navigate to="/login" replace/>;
 };
+const RedirectAgileIterationsRoute = () => {
+    const { currentUser } = useAuthStore();
+    const { projectKey, projectName } = useParams();
+    const location = useLocation();
+    const rolePrefix = currentUser?.role === 'ADMIN' ? 'admin' : currentUser?.role === 'TEAM_LEADER' ? 'tl' : currentUser?.role === 'MEMBER' ? 'member' : 'pm';
+    const key = projectKey || 'ECOMM4.0';
+    const name = projectName || 'e-commerce-platform';
+    return <Navigate to={`/${rolePrefix}/${encodeURIComponent(key)}/${name}/iterations${location.search}`} replace />;
+};
+
 export const AppRoutes = () => {
     const { isAuthenticated, currentUser } = useAuthStore();
     return (<Routes>
@@ -141,14 +151,43 @@ export const AppRoutes = () => {
             <TrialPage />
           </MarketingLayout>}/>
 
-      {/* Product Increments → "Open iterations": a blank white page, deliberately
-            OUTSIDE the AppShell route so no sidebar/header/tabs render. */}
-      <Route path="/pi-iterations/:piId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
-            <BlankIterationsPage />
-          </ProtectedRoute>}/>
-
-      {/* Protected App Routes */}
+            {/* Protected App Routes */}
       <Route path="/" element={<RootRoute />}>
+        {/* Program Increments → "Open iterations" */}
+        <Route path="pi-iterations" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <PIIterationsPage />
+            </ProtectedRoute>}/>
+        <Route path="pi-iterations/:piId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <PIIterationsPage />
+            </ProtectedRoute>}/>
+        <Route path="pi-iterations/:piId/sprints/:sprintId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <SprintDetailPage />
+            </ProtectedRoute>}/>
+        <Route path="pi-iterations/sprints/:sprintId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <SprintDetailPage />
+            </ProtectedRoute>}/>
+
+        {/* AGILE / OPEN ITERATIONS ROUTES */}
+        <Route path="agile/pi-iterations" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <PIIterationsPage />
+            </ProtectedRoute>}/>
+        <Route path="agile/pi-iterations/:piId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <PIIterationsPage />
+            </ProtectedRoute>}/>
+        <Route path="agile/pi-iterations/:piId/sprints/:sprintId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <SprintDetailPage />
+            </ProtectedRoute>}/>
+        <Route path="agile/pi-iterations/sprints/:sprintId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <SprintDetailPage />
+            </ProtectedRoute>}/>
+        <Route path="agile/:projectKey/iterations/*" element={<RedirectAgileIterationsRoute />}/>
+        <Route path="agile/:projectKey/:projectName/iterations/*" element={<RedirectAgileIterationsRoute />}/>
+        <Route path="agile/iterations/*" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <IterationsModuleRoute />
+            </ProtectedRoute>}/>
+        <Route path="iterations/*" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
+              <IterationsModuleRoute />
+            </ProtectedRoute>}/>
         {/* Index redirect to user role dashboard */}
         <Route index element={currentUser ? (<Navigate to={getDashboardPath(currentUser.role)} replace/>) : (<Navigate to="/login" replace/>)}/>
 
@@ -192,6 +231,12 @@ export const AppRoutes = () => {
             </ProtectedRoute>}/>
         <Route path="admin/:projectKey" element={<ProtectedRoute allowedRoles={['ADMIN']}>
               <ProjectWorkspace />
+            </ProtectedRoute>}/>
+        <Route path="admin/bugs" element={<ProtectedRoute allowedRoles={['ADMIN']}>
+              <BugsPage />
+            </ProtectedRoute>}/>
+        <Route path="admin/bugs/:bugId" element={<ProtectedRoute allowedRoles={['ADMIN']}>
+              <BugDetailPage />
             </ProtectedRoute>}/>
         <Route path="admin/activity" element={<ProtectedRoute allowedRoles={['ADMIN']}>
               <ActivityPage />
@@ -238,6 +283,12 @@ export const AppRoutes = () => {
             </ProtectedRoute>}/>
         <Route path="pm/initiatives/:initiativeId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'TEAM_LEADER', 'MEMBER', 'ADMIN']}>
               <InitiativeDetailPage />
+            </ProtectedRoute>}/>
+        <Route path="pm/bugs" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMIN']}>
+              <BugsPage />
+            </ProtectedRoute>}/>
+        <Route path="pm/bugs/:bugId" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMIN']}>
+              <BugDetailPage />
             </ProtectedRoute>}/>
         <Route path="pm/activity" element={<ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMIN']}>
               <ActivityPage />
@@ -343,6 +394,9 @@ export const AppRoutes = () => {
         <Route path="notifications" element={<NotificationsPage />}/>
         <Route path="my-todo" element={<TodoPage />}/>
         <Route path="settings" element={<SettingsPage />}/>
+        <Route path="bugs" element={<ProtectedRoute>
+              <BugsPage />
+            </ProtectedRoute>}/>
         <Route path="bugs/:bugId" element={<ProtectedRoute>
               <BugDetailPage />
             </ProtectedRoute>}/>

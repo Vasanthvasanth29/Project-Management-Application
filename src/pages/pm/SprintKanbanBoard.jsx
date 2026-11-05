@@ -462,7 +462,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
       </div>
 
       {/* 3-column board */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-2 items-stretch">
         {BOARD_COLUMNS.map((col) => {
             const colTasks = columnTasks(col.key);
             const isOver = dragOverColumn === col.key;
@@ -491,7 +491,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                         : isBlocked
                             ? 'border border-slate-200 bg-slate-50/60'
                             : 'border border-[#e0e2ec] bg-white'}`}>
-              <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b-2 border-slate-200 flex-shrink-0">
+              <div className="flex items-center justify-between gap-2 pb-2 mb-1.5 border-b-2 border-slate-200 flex-shrink-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLUMN_DOTS[col.key]}`}/>
                   <h4 className="text-xs font-bold text-[#1f1f1f] tracking-wide">{col.label}</h4>
@@ -501,7 +501,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                 </span>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 scrollbar-thin flex flex-col gap-2.5">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 scrollbar-thin flex flex-col gap-2">
                 {showDoneTargets && (
                 /* Drag-only drop targets: visible exclusively while a card is
                    dragged validly over DONE, gone the moment the drag ends. */
