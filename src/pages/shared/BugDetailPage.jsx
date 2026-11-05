@@ -18,13 +18,13 @@ import { toast } from 'sonner';
 export const BugDetailPage = () => {
     const { bugId } = useParams();
     const navigate = useNavigate();
-    const { bugs, projects, users, tasks, fileRecords, addFileRecord, removeFileRecord, getStorageUsage, updateBugStatus, assignBug } = useAppStore();
+    const { bugs = [], projects = [], users = [], tasks = [], fileRecords = [], addFileRecord, removeFileRecord, getStorageUsage, updateBugStatus, assignBug } = useAppStore();
     const { currentUser } = useAuthStore();
     const [showUploadZone, setShowUploadZone] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]);
     const [versionHistoryGroupId, setVersionHistoryGroupId] = useState(null);
     const [commentText, setCommentText] = useState('');
-    const bug = bugs.find((b) => matchId(b.id, bugId));
+    const bug = (bugs || []).find((b) => matchId(b?.id, bugId));
     if (!bug) {
         return (<div className="card p-8 text-center">
         <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3"/>
@@ -38,8 +38,8 @@ export const BugDetailPage = () => {
     const reporter = users.find((u) => u.id === bug.reportedById);
     const assignee = users.find((u) => u.id === bug.assignedToId);
     const relatedTask = bug.taskId ? tasks.find((t) => t.id === bug.taskId) : null;
-    const bugFileRecords = fileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted);
-    const storageUsage = getStorageUsage(bug.projectId);
+    const bugFileRecords = (fileRecords || []).filter((fr) => fr.bugId === bug.id && !fr.isDeleted);
+    const storageUsage = (typeof getStorageUsage === "function" && bug.projectId) ? getStorageUsage(bug.projectId) : { usedBytes: 0, maxBytes: 1 };
     const handleFilesSelected = (files) => {
         if (!currentUser)
             return;

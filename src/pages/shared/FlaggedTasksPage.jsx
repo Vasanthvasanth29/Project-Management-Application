@@ -120,7 +120,7 @@ export const FlaggedTasksPage = () => {
         const q = addSearchTaskQuery.toLowerCase().trim();
         return tasks
             .filter((t) => !t.isFlagged)
-            .filter((t) => t.title.toLowerCase().includes(q) || t.id.toLowerCase().includes(q))
+            .filter((t) => (t?.title || '').toLowerCase().includes(q) || (t?.id || '').toLowerCase().includes(q))
             .slice(0, 8);
     }, [tasks, addSearchTaskQuery]);
     const handleQuickAddFlag = (task) => {

@@ -548,7 +548,7 @@ export const TLDashboard = () => {
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] text-[#1a1d23] leading-relaxed">
                         <span className="font-semibold">{actor?.name || 'Someone'}</span>{' '}
-                        <span className="text-[#9ca3af]">{act.action.toLowerCase()}</span>{' '}
+                        <span className="text-[#9ca3af]">{(act?.action || '').toLowerCase()}</span>{' '}
                         <span className="font-medium">{act.entityTitle}</span>
                       </div>
                       <div className="text-[10px] text-[#d1d5db] mt-0.5">

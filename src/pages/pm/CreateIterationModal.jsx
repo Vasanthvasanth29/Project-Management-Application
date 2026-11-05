@@ -11,7 +11,7 @@ let entryKeySeq = 0;
 const blankEntry = () => ({ key: `e${++entryKeySeq}`, iterationNumber: '', name: '', startDate: '', endDate: '', goal: '', status: 'PLANNED' });
 /**
  * Create Iteration — the one iteration form every entry point opens
- * (Product Increments card, Iterations page, Iteration Board, Work Queue).
+ * (Program Increments card, Iterations page, Iteration Board, Work Queue).
  *
  * The user enters HOW MANY iterations to create; the form renders exactly that
  * many entries, each with its own auto-generated number (continuing from the

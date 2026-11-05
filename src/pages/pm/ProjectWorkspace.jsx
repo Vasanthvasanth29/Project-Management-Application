@@ -45,7 +45,7 @@ const DEFAULT_TABS_CONFIG = [
     { id: 'work-queue', defaultLabel: 'Work Queue', icon: ClipboardList, category: 'execution' },
     { id: 'iterations', defaultLabel: 'Iterations', icon: CalendarRange, category: 'planning' },
     // Project-level home for PIs (Create PI lives here, not on the Iterations page).
-    { id: 'product-increments', defaultLabel: 'Product Increments', icon: ListTree, category: 'planning' },
+    { id: 'product-increments', defaultLabel: 'Program Increments', icon: ListTree, category: 'planning' },
     { id: 'iterations-overview', defaultLabel: 'Iterations Overview', icon: Layers, category: 'planning' },
     { id: 'backlog-overview', defaultLabel: 'Work Queue Overview', icon: ListTodo, category: 'planning' },
     { id: 'execution-board', defaultLabel: 'Execution Board', icon: Columns, category: 'execution' },
@@ -128,7 +128,7 @@ export const ProjectWorkspace = () => {
         catch (e) {
             console.error(e);
         }
-        // Default to the first 6 tabs, plus Product Increments next to Iterations
+        // Default to the first 6 tabs, plus Program Increments next to Iterations
         const initialSix = withPiTab(DEFAULT_TABS_CONFIG.filter((t) => t.id !== PI_TAB_ID).slice(0, 6).map((t) => t.id));
         if (tabParam && DEFAULT_TABS_CONFIG.some((t) => t.id === tabParam) && !initialSix.includes(tabParam)) {
             return [...initialSix, tabParam];
@@ -900,9 +900,9 @@ export const ProjectWorkspace = () => {
             const filteredRemainingTabs = remainingTabs.filter((tab) => {
                 const query = tabSearchQuery.trim().toLowerCase();
                 const matchesQuery = !query ||
-                    tab.label.toLowerCase().includes(query) ||
-                    tab.defaultLabel.toLowerCase().includes(query) ||
-                    tab.category.toLowerCase().includes(query);
+                    (tab?.label || '').toLowerCase().includes(query) ||
+                    (tab?.defaultLabel || '').toLowerCase().includes(query) ||
+                    (tab?.category || '').toLowerCase().includes(query);
                 const matchesCategory = selectedTabCategory === 'all' || tab.category === selectedTabCategory;
                 return matchesQuery && matchesCategory;
             });

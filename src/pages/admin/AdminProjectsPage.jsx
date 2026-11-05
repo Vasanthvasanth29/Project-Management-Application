@@ -231,8 +231,8 @@ export const AdminProjectsPage = () => {
                     <button type="button" onClick={(e) => {
                     e.stopPropagation();
                     navigate(getProjectPiUrl(project, 'ADMIN'));
-                }} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0d9488] hover:text-[#0f766e] hover:underline cursor-pointer" title="Open this project's Product Increments (create and manage PIs)" data-testid="project-pi-link">
-                      <ListTree className="w-3 h-3"/> Product Increments
+                }} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0d9488] hover:text-[#0f766e] hover:underline cursor-pointer" title="Open this project's Program Increments (create and manage PIs)" data-testid="project-pi-link">
+                      <ListTree className="w-3 h-3"/> Program Increments
                     </button>
                     <span className="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
                       {project.id}

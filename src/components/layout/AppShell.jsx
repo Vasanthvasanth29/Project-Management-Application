@@ -22,6 +22,7 @@ export const AppShell = () => {
     // runs without it.
     const HOME_ROUTES = ['/admin', '/pm', '/tl', '/member'];
     const isHomeRoute = HOME_ROUTES.includes(normalizedPath);
+
     const showTopbar = isHomeRoute;
     const toggleCollapse = () => {
         setSidebarWidth((prev) => {

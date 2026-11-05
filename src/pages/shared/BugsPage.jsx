@@ -11,33 +11,43 @@ import { formatFileSize, getFileCategory } from '../../utils/fileConfig';
 import { displayStatusLabel } from '../../utils/roleUtils';
 import { toUrlId } from '../../utils/idUtils';
 import { toast } from 'sonner';
+
 export const BugsPage = () => {
     const navigate = useNavigate();
-    const { bugs, users, projects, tasks, fileRecords, updateBugStatus, assignBug } = useAppStore();
+    const { bugs = [], users = [], projects = [], tasks = [], fileRecords = [], updateBugStatus, assignBug } = useAppStore();
     const { currentUser } = useAuthStore();
     const [search, setSearch] = useState('');
     const [severityFilter, setSeverityFilter] = useState('ALL');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [expandedBugId, setExpandedBugId] = useState(null);
+
+    const safeBugs = useMemo(() => Array.isArray(bugs) ? bugs : [], [bugs]);
+
     const filteredBugs = useMemo(() => {
-        let result = bugs;
+        let result = safeBugs;
         if (search) {
             const q = search.toLowerCase();
-            result = result.filter((b) => b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q) || b.id.toLowerCase().includes(q));
+            result = result.filter((b) => 
+                (b?.title || '').toLowerCase().includes(q) || 
+                (b?.description || '').toLowerCase().includes(q) || 
+                (b?.id || '').toLowerCase().includes(q)
+            );
         }
         if (severityFilter !== 'ALL')
-            result = result.filter((b) => b.severity === severityFilter);
+            result = result.filter((b) => (b?.severity || 'LOW') === severityFilter);
         if (statusFilter !== 'ALL')
-            result = result.filter((b) => b.status === statusFilter);
+            result = result.filter((b) => (b?.status || 'OPEN') === statusFilter);
         return result;
-    }, [bugs, search, severityFilter, statusFilter]);
+    }, [safeBugs, search, severityFilter, statusFilter]);
+
     const stats = useMemo(() => ({
-        total: bugs.length,
-        open: bugs.filter((b) => b.status === 'OPEN').length,
-        inProgress: bugs.filter((b) => b.status === 'IN_PROGRESS').length,
-        fixed: bugs.filter((b) => b.status === 'FIXED').length,
-        critical: bugs.filter((b) => b.severity === 'CRITICAL' && b.status !== 'CLOSED').length,
-    }), [bugs]);
+        total: safeBugs.length,
+        open: safeBugs.filter((b) => (b?.status || 'OPEN') === 'OPEN').length,
+        inProgress: safeBugs.filter((b) => b?.status === 'IN_PROGRESS').length,
+        fixed: safeBugs.filter((b) => b?.status === 'FIXED').length,
+        critical: safeBugs.filter((b) => (b?.severity || 'LOW') === 'CRITICAL' && b?.status !== 'CLOSED').length,
+    }), [safeBugs]);
+
     return (<div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="page-title">Bug Tracking & Rework</h1>
@@ -96,27 +106,29 @@ export const BugsPage = () => {
       <div className="card overflow-hidden">
         {filteredBugs.length === 0 ? (<EmptyState icon={BugIcon} title="No bugs reported" description={search || severityFilter !== 'ALL' || statusFilter !== 'ALL' ? "Try adjusting your filters" : "All clear! No open work items or rework items."}/>) : (<div className="divide-y divide-slate-100">
             {filteredBugs.map((bug) => {
+                if (!bug) return null;
                 const project = projects.find((p) => p.id === bug.projectId);
                 const reporter = users.find((u) => u.id === bug.reportedById);
                 const assignee = users.find((u) => u.id === bug.assignedToId);
                 const relatedTask = bug.taskId ? tasks.find((t) => t.id === bug.taskId) : null;
                 const isExpanded = expandedBugId === bug.id;
+                const safeFileRecords = Array.isArray(fileRecords) ? fileRecords : [];
                 return (<div key={bug.id} className="hover:bg-slate-50 transition-colors">
                   {/* Bug Row */}
                   <div className="flex items-center gap-4 px-4 py-3 cursor-pointer" onClick={() => setExpandedBugId(isExpanded ? null : bug.id)}>
-                    <button className="flex-shrink-0">
+                    <button className="flex-shrink-0" type="button" aria-label="Toggle details">
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400"/> : <ChevronRight className="w-4 h-4 text-slate-400"/>}
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-[10px] font-bold text-slate-400">{bug.id}</span>
-                        <span className="text-sm font-semibold text-slate-800 truncate">{bug.title}</span>
+                        <span className="text-sm font-semibold text-slate-800 truncate">{bug.title || 'Untitled Bug'}</span>
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-slate-500">
                         <span>{project?.name || '—'}</span>
                         {bug.steps && <span className="flex items-center gap-0.5"><MessageSquare className="w-3 h-3"/>Has steps</span>}
                         {bug.attachments && bug.attachments.length > 0 && <span className="flex items-center gap-0.5"><Paperclip className="w-3 h-3"/>{bug.attachments.length}</span>}
-                        {fileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted).length > 0 && (<span className="flex items-center gap-0.5"><FileIcon className="w-3 h-3"/>{fileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted).length}</span>)}
+                        {safeFileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted).length > 0 && (<span className="flex items-center gap-0.5"><FileIcon className="w-3 h-3"/>{safeFileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted).length}</span>)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -124,28 +136,28 @@ export const BugsPage = () => {
                       <BugStatusBadge status={bug.status}/>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 w-32">
-                      {reporter && (<div className="flex items-center gap-1" title={`Reported by ${reporter.name}`}>
-                          <Avatar name={reporter.name} color={reporter.avatarColor} size="xs"/>
-                          <span className="text-[10px] text-slate-500 hidden xl:inline">{reporter.name.split(' ')[0]}</span>
+                      {reporter && (<div className="flex items-center gap-1" title={`Reported by ${reporter.name || 'Unknown'}`}>
+                          <Avatar name={reporter.name || 'Unknown'} color={reporter.avatarColor} size="xs"/>
+                          <span className="text-[10px] text-slate-500 hidden xl:inline">{(reporter.name || 'Unknown').split(' ')[0]}</span>
                         </div>)}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 w-32">
-                      {assignee ? (<div className="flex items-center gap-1" title={`Assigned to ${assignee.name}`}>
-                          <Avatar name={assignee.name} color={assignee.avatarColor} size="xs"/>
-                          <span className="text-[10px] text-slate-500 hidden xl:inline">{assignee.name.split(' ')[0]}</span>
+                      {assignee ? (<div className="flex items-center gap-1" title={`Assigned to ${assignee.name || 'Unknown'}`}>
+                          <Avatar name={assignee.name || 'Unknown'} color={assignee.avatarColor} size="xs"/>
+                          <span className="text-[10px] text-slate-500 hidden xl:inline">{(assignee.name || 'Unknown').split(' ')[0]}</span>
                         </div>) : (<span className="text-[10px] text-slate-400 italic">Unassigned</span>)}
                     </div>
                     <div className="flex-shrink-0 w-20">
-                      {bug.status === 'OPEN' && (<button className="btn-primary btn-sm text-[10px]" onClick={(e) => { e.stopPropagation(); updateBugStatus(bug.id, 'IN_PROGRESS'); toast.success('Bug marked In Progress'); }}>
+                      {bug.status === 'OPEN' && (<button className="btn-primary btn-sm text-[10px]" onClick={(e) => { e.stopPropagation(); updateBugStatus?.(bug.id, 'IN_PROGRESS'); toast.success('Bug marked In Progress'); }}>
                           Start Fix
                         </button>)}
-                      {bug.status === 'IN_PROGRESS' && (<button className="btn-primary btn-sm text-[10px] bg-teal-600 hover:bg-teal-700" onClick={(e) => { e.stopPropagation(); updateBugStatus(bug.id, 'FIXED'); toast.success('Bug marked Fixed'); }}>
+                      {bug.status === 'IN_PROGRESS' && (<button className="btn-primary btn-sm text-[10px] bg-teal-600 hover:bg-teal-700" onClick={(e) => { e.stopPropagation(); updateBugStatus?.(bug.id, 'FIXED'); toast.success('Bug marked Fixed'); }}>
                           Mark Fixed
                         </button>)}
-                      {bug.status === 'FIXED' && (<button className="btn-secondary btn-sm text-[10px] text-emerald-600" onClick={(e) => { e.stopPropagation(); updateBugStatus(bug.id, 'CLOSED'); toast.success('Bug closed!'); }}>
+                      {bug.status === 'FIXED' && (<button className="btn-secondary btn-sm text-[10px] text-emerald-600" onClick={(e) => { e.stopPropagation(); updateBugStatus?.(bug.id, 'CLOSED'); toast.success('Bug closed!'); }}>
                           Close
                         </button>)}
-                      {bug.status === 'RETESTING' && (<button className="btn-secondary btn-sm text-[10px] text-blue-600" onClick={(e) => { e.stopPropagation(); updateBugStatus(bug.id, 'CLOSED'); toast.success('Bug verified and closed!'); }}>
+                      {bug.status === 'RETESTING' && (<button className="btn-secondary btn-sm text-[10px] text-blue-600" onClick={(e) => { e.stopPropagation(); updateBugStatus?.(bug.id, 'CLOSED'); toast.success('Bug verified and closed!'); }}>
                           Verify
                         </button>)}
                     </div>
@@ -174,7 +186,7 @@ export const BugsPage = () => {
 
                       <div>
                         <span className="text-[10px] font-bold text-slate-500">Description</span>
-                        <p className="text-xs text-slate-700 mt-1 leading-relaxed">{bug.description}</p>
+                        <p className="text-xs text-slate-700 mt-1 leading-relaxed">{bug.description || 'No description provided.'}</p>
                       </div>
 
                       {bug.steps && (<div>
@@ -209,7 +221,7 @@ export const BugsPage = () => {
                         </div>)}
 
                       {(() => {
-                            const bugFileRecords = fileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted);
+                            const bugFileRecords = safeFileRecords.filter((fr) => fr.bugId === bug.id && !fr.isDeleted);
                             if (bugFileRecords.length === 0)
                                 return null;
                             return (<div>

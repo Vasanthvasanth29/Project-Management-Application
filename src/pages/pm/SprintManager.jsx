@@ -30,7 +30,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
     const { currentUser } = useAuthStore();
     const [showCreateSprint, setShowCreateSprint] = useState(false);
     const [createIterationPiId, setCreateIterationPiId] = useState(undefined);
-    // PIs are created at project level (Project → Product Increments).
+    // PIs are created at project level (Project → Program Increments).
     const { productIncrementsUrl } = useIterationPaths();
     const [subView] = useState(paramSubView || initialSubView);
     const [editingGoalSprintId, setEditingGoalSprintId] = useState(null);
@@ -269,9 +269,9 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
       {/* Iterations List */}
       {projectSprints.length === 0 ? (<div className="bg-white rounded-3xl p-8 border border-[#e0e2ec]">
           <EmptyState icon={projectPis.length === 0 ? ListTree : CalendarRange} title={projectPis.length === 0 ? 'No PI Configured' : 'No Iterations Configured'} description={projectPis.length === 0
-                    ? 'Iterations are generated inside a PI and numbered from it (PI 30 → 30.1, 30.2 …). Create the PI from the project\'s Product Increments section.'
+                    ? 'Iterations are generated inside a PI and numbered from it (PI 30 → 30.1, 30.2 …). Create the PI from the project\'s Program Increments section.'
                     : `Create your first iteration of ${projectPis[0]?.name} to organize work items into Total, Executing, Queued, and Delivered boards.`} action={projectPis.length === 0
-                    ? { label: 'Go to Product Increments', onClick: () => navigate(productIncrementsUrl) }
+                    ? { label: 'Go to Program Increments', onClick: () => navigate(productIncrementsUrl) }
                     : { label: 'Create First Iteration', onClick: () => openCreateIteration(projectPis.find((p) => canCreateIterationInPi(p, sprints))?.id) }}/>
         </div>) : (<div className="space-y-6">
           {iterationGroups.map((group) => (<div key={group.key} className="space-y-3">

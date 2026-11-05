@@ -87,7 +87,7 @@ export function getProjectUrl(project, role) {
     const nameSlug = slugify(project.name) || toUrlId(project.id);
     return `${rolePrefix}/${encodeURIComponent(key)}/${nameSlug}`;
 }
-/** Project → Product Increments section (where PIs are created and listed). */
+/** Project → Program Increments section (where PIs are created and listed). */
 export function getProjectPiUrl(project, role) {
     return `${getProjectUrl(project, role)}?tab=product-increments`;
 }

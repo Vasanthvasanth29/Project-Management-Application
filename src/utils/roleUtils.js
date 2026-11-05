@@ -50,7 +50,7 @@ export const getStatusColor = (status) => {
         VALIDATION: 'badge-blue',
         COMPLETED: 'badge-green',
     };
-    return colors[status];
+    return (status && colors[status]) || 'badge-gray';
 };
 export const getStatusLabel = (status) => {
     const labels = {
@@ -78,10 +78,10 @@ export const getStatusLabel = (status) => {
         VALIDATION: 'Validation',
         COMPLETED: 'Completed',
     };
-    return labels[status];
+    return (status && labels[status]) || status || '—';
 };
-export const isCancelledWorkItem = (task) => task.status === 'CANCELLED' || (task.status === 'DONE' && task.resolution === 'CANCELLED');
-export const displayTaskStatus = (task) => isCancelledWorkItem(task) ? 'CANCELLED' : task.status;
+export const isCancelledWorkItem = (task) => Boolean(task && (task.status === 'CANCELLED' || (task.status === 'DONE' && task.resolution === 'CANCELLED')));
+export const displayTaskStatus = (task) => task ? (isCancelledWorkItem(task) ? 'CANCELLED' : (task.status || 'TODO')) : 'TODO';
 export const displayStatusLabel = (task) => getStatusLabel(displayTaskStatus(task));
 export const displayStatusColor = (task) => getStatusColor(displayTaskStatus(task));
 export const getPriorityColor = (priority) => {
@@ -91,7 +91,7 @@ export const getPriorityColor = (priority) => {
         HIGH: 'badge-orange',
         CRITICAL: 'badge-red',
     };
-    return colors[priority];
+    return (priority && colors[priority]) || 'badge-gray';
 };
 export const getPriorityDotColor = (priority) => {
     const colors = {
@@ -100,7 +100,7 @@ export const getPriorityDotColor = (priority) => {
         HIGH: 'bg-[#ef4444]',
         CRITICAL: 'bg-[#dc2626]',
     };
-    return colors[priority];
+    return (priority && colors[priority]) || 'bg-slate-400';
 };
 export const getUserStatusColor = (status) => {
     const colors = {
@@ -108,7 +108,7 @@ export const getUserStatusColor = (status) => {
         ACTIVE: 'badge-green',
         INACTIVE: 'badge-gray',
     };
-    return colors[status];
+    return (status && colors[status]) || 'badge-gray';
 };
 export const getUserStatusLabel = (status) => {
     const labels = {
@@ -116,7 +116,7 @@ export const getUserStatusLabel = (status) => {
         ACTIVE: 'Active',
         INACTIVE: 'Inactive',
     };
-    return labels[status];
+    return (status && labels[status]) || (status ? String(status) : '—');
 };
 export const getSprintStatusLabel = (status) => {
     const labels = {
@@ -126,7 +126,7 @@ export const getSprintStatusLabel = (status) => {
         COMPLETED: 'Completed',
         CANCELLED: 'Cancelled',
     };
-    return labels[status] || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, ' ') : '');
+    return (status && labels[status]) || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, ' ') : '—');
 };
 export const getProjectStatusLabel = (status) => {
     const labels = {
@@ -136,7 +136,7 @@ export const getProjectStatusLabel = (status) => {
         COMPLETED: 'Completed',
         CANCELLED: 'Cancelled',
     };
-    return labels[status] || (status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' '));
+    return (status && labels[status]) || (status ? (status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, ' ')) : '—');
 };
 export const getSprintStatusColor = (status) => {
     const colors = {
@@ -144,7 +144,7 @@ export const getSprintStatusColor = (status) => {
         ACTIVE: 'badge-teal',
         COMPLETED: 'badge-green',
     };
-    return colors[status];
+    return (status && colors[status]) || 'badge-gray';
 };
 export const getBugStatusColor = (status) => {
     const colors = {
@@ -155,7 +155,7 @@ export const getBugStatusColor = (status) => {
         CLOSED: 'badge-green',
         REOPENED: 'badge-red',
     };
-    return colors[status];
+    return (status && colors[status]) || 'badge-gray';
 };
 export const getBugSeverityColor = (severity) => {
     const colors = {
@@ -164,7 +164,7 @@ export const getBugSeverityColor = (severity) => {
         HIGH: 'badge-orange',
         CRITICAL: 'badge-red',
     };
-    return colors[severity];
+    return (severity && colors[severity]) || 'badge-gray';
 };
 // ---------------------------------------------------------------------------
 // ADMIN FULL-ACCESS MODEL
