@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ListTodo } from 'lucide-react';
+import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp,ChevronsDown, ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -188,21 +188,25 @@ const toggleSprintOpen = (sprintId) => {
     // the SAME expandedSprintIds state the individual chevrons use, so all cards fold
     // at once while each chevron keeps toggling independently afterwards.
 const collapseAllSprints = () => {
-    if (!isAllSprintsCollapsed) {
-        const collapsed = {};
-        projectSprints.forEach((sprint) => {
-            collapsed[sprint.id] = false;
-        });
-        setExpandedSprintIds(collapsed);
-        setIsAllSprintsCollapsed(true);
-    } else {
-        const expanded = {};
-        projectSprints.forEach((sprint) => {
-            expanded[sprint.id] = true;
-        });
-        setExpandedSprintIds(expanded);
-        setIsAllSprintsCollapsed(false);
-    }
+  if (!isAllSprintsCollapsed) {
+    const collapsed = {};
+
+    projectSprints.forEach((sprint) => {
+      collapsed[sprint.id] = false;
+    });
+
+    setExpandedSprintIds(collapsed);
+    setIsAllSprintsCollapsed(true);
+  } else {
+    const expanded = {};
+
+    projectSprints.forEach((sprint) => {
+      expanded[sprint.id] = true;
+    });
+
+    setExpandedSprintIds(expanded);
+    setIsAllSprintsCollapsed(false);
+  }
 };
     // Per-sprint open menus (only one row menu / status switcher open at a time)
     const [moreMenuSprintId, setMoreMenuSprintId] = useState(null);
@@ -1451,10 +1455,20 @@ const collapseAllSprints = () => {
     // buttons were removed from the header entirely; everything that remains
     // keeps its original components and handlers — no duplicate buttons.
     const headerActionsNode = (<div className="flex items-center gap-2 flex-shrink-0 relative flex-wrap">
-          <button type="button" onClick={collapseAllSprints} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-white hover:bg-[#f4f5f7] text-[#172b4d] transition-colors border border-[#dfe1e6] shadow-xs cursor-pointer whitespace-nowrap" title="Collapse all iterations" aria-label="Collapse all iterations">
-            <ChevronsUp className="w-3.5 h-3.5 text-[#6b778c]"/>
-            <span>Collapse All</span>
-          </button>
+      <button
+  type="button"
+  onClick={collapseAllSprints}
+  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-white hover:bg-[#f4f5f7] text-[#172b4d] transition-colors border border-[#dfe1e6] shadow-xs cursor-pointer whitespace-nowrap"
+  title={isAllSprintsCollapsed ? "Expand all iterations" : "Collapse all iterations"}
+  aria-label={isAllSprintsCollapsed ? "Expand all iterations" : "Collapse all iterations"}
+>
+  {isAllSprintsCollapsed ? (
+  <ChevronsDown className="w-3.5 h-3.5 text-[#6b778c]" />
+) : (
+  <ChevronsUp className="w-3.5 h-3.5 text-[#6b778c]" />
+)}
+  <span>{isAllSprintsCollapsed ? "Expand All" : "Collapse All"}</span>
+</button>
 
               {/* Split / Dropdown Create Action */}
               <div className="relative inline-flex items-stretch rounded-md shadow-xs">
@@ -2660,7 +2674,8 @@ const collapseAllSprints = () => {
                   Create Work Item
                 </button>
               </div>
-            </form>
+            </form>git fetch origin
+
           </div>
         </div>)}
 

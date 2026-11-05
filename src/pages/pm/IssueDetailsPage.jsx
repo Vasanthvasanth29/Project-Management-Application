@@ -15,7 +15,7 @@ import { resolveTaskByIssueKey, resolveIssueKey } from '../../utils/issueKeyReso
 import { issuePath } from '../../utils/issueUrl';
 import { getStatusColor, getStatusLabel, isCancelledWorkItem } from '../../utils/roleUtils';
 import { INITIATIVE_WORKFLOW_CHAIN, initiativeBoardColumn, getAllowedInitiativeTransitions, } from '../../utils/initiativeWorkflow';
-import { formatTransitionDateTime, formatDuration } from '../../utils/statusTransitions';
+import { formatTransitionDateTime } from '../../utils/statusTransitions';
 import { IssueDetailsSection, PeoplePanel, DatesPanel, IssueLinks, ChildIssueList, CommentsThread, } from '../../components/issues';
 import { collectChildRows } from '../../utils/workItemHierarchy';
 import { collectSprintWorkItems, sortProjectSprints } from '../../utils/sprintIssues';
@@ -30,11 +30,9 @@ const nodeTypes = { stageNode: StageNode, startNode: StartNode, doneNode: DoneNo
 const ACTIVITY_TABS = [
     ['all', 'All'],
     ['comments', 'Comments'],
-    ['worklog', 'Work Log'],
-    ['history', 'History'],
-    ['activity', 'Activity'],
-    ['grid', 'Grid History'],
-    ['transitions', 'Transitions'],
+    ['worklog', 'Work Logs'],
+    ['activitylog', 'Activity Log'],
+    ['transitions', 'Status Changes'],
 ];
 // Status badge text, exactly as the board columns spell them (TO DO / IN REVIEW ...).
 const STATUS_BADGE_LABEL = {
@@ -79,7 +77,6 @@ const FALLBACK_TRANSITIONS = [
         toStatus: 'DONE',
         changedAt: '2024-10-12T21:30:00',
         sourceEnteredAt: '2024-10-06T06:00:00',
-        timeInSourceStatus: '6d 15h 30m',
     },
     {
         id: 'fallback-transition-2',
@@ -90,7 +87,6 @@ const FALLBACK_TRANSITIONS = [
         toStatus: 'IN_PROGRESS',
         changedAt: '2024-10-06T06:00:00',
         sourceEnteredAt: '2024-09-29T15:30:00',
-        timeInSourceStatus: '6d 14h 30m',
     },
     {
         id: 'fallback-transition-3',
@@ -101,7 +97,6 @@ const FALLBACK_TRANSITIONS = [
         toStatus: 'TODO',
         changedAt: '2024-09-29T15:30:00',
         sourceEnteredAt: '2024-09-29T14:30:00',
-        timeInSourceStatus: '1h',
     },
 ];
 export const IssueDetailsPage = () => {
@@ -210,7 +205,7 @@ export const IssueDetailsPage = () => {
     // Header "Edit" action — opens the shared Edit Work Item dialog (the same
     // one the Tasks list uses). The Description card itself stays read-only.
     const [showEditModal, setShowEditModal] = useState(false);
-    const [activityTab, setActivityTab] = useState('transitions');
+    const [activityTab, setActivityTab] = useState('all');
     // Editable status control (top-right): a menu of the workflow's valid
     // transitions, plus the optional-comment dialog for the moves the board
     // also gates the same way (needsComment).
@@ -346,7 +341,7 @@ export const IssueDetailsPage = () => {
         if (row)
             navigate(issuePath(row.task));
     };
-    // ---- Activity feed: All / Comments / Work Log / History / Activity / Grid History / Transitions ----
+    // ---- Activity feed: All / Comments / Work Logs / Activity Log / Status Changes ----
     const taskActivities = activities.filter((a) => a.entityId === task.id);
     const timeLogs = task.timeLogs || [];
     // Status transition records: the Task's own history plus any records still
@@ -418,24 +413,21 @@ export const IssueDetailsPage = () => {
         </div>),
         };
     };
-    // When the issue entered the source status of a record: the timestamp the
-    // record itself carries (`sourceEnteredAt`, written when the transition was
-    // recorded), else the previous record's timestamp, else the issue's creation
-    // for the first one - so every view recomputes the same value from real
-    // timestamps instead of trusting a fixed string.
+    // Timestamp when the issue entered the source status for this transition.
+    // Prefer the timestamp stored on the transition; otherwise use the previous
+    // transition's timestamp, falling back to the issue creation timestamp.
     const sourceEnteredAtFor = (transition) => {
         if (transition.sourceEnteredAt)
             return transition.sourceEnteredAt;
-        const chronological = [...(task.statusTransitions || [])].sort((a, b) => a.changedAt.localeCompare(b.changedAt));
-        const position = chronological.findIndex((t) => t.id === transition.id);
-        return position > 0 ? chronological[position - 1].changedAt : task.createdAt;
-    };
-    const timeInSourceStatusFor = (transition) => {
-        const startedAt = new Date(sourceEnteredAtFor(transition)).getTime();
-        const changedAt = new Date(transition.changedAt).getTime();
-        if (Number.isNaN(startedAt) || Number.isNaN(changedAt) || changedAt < startedAt)
-            return transition.timeInSourceStatus;
-        return formatDuration(changedAt - startedAt);
+
+        const chronological = [...statusTransitions].sort(
+            (a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime()
+        );
+        const position = chronological.findIndex((item) => item.id === transition.id);
+
+        return position > 0
+            ? chronological[position - 1].changedAt
+            : task.createdAt;
     };
     // Helper to format transition status in Initial Caps (Title Case)
     const formatTransitionStatus = (status) => STATUS_BADGE_LABEL[status] || getStatusLabel(status) || status;
@@ -448,23 +440,37 @@ export const IssueDetailsPage = () => {
     // Row content of a transition record — the Jira-style hierarchy:
     //   [avatar] <user> made transition - <date/time>        (line 1, ~14px)
     //            FROM → TO                                   (line 2, below)
-    const renderTransitionDetails = (transition) => (<div className="flex items-start gap-2.5 min-w-0" data-testid="transition-record">
-      <Avatar name={transition.userName || 'System'} color={transition.userAvatarColor} size="sm" imageUrl={transition.userAvatar}/>
-      <div className="min-w-0">
-          <p className="text-[11.2px] leading-snug">
-          <span className="font-medium text-[#343A40]">{transition.userName}</span>{' '}
-          <span className="font-normal text-[#343A40]">
-            made transition -{' '}
-            <span className="tabular-nums">{formatTransitionDateTime(transition.changedAt)}</span>
-          </span>
-        </p>
-        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-          {transitionPill(transition.fromStatus)}
-          <ArrowRight className="w-3 h-3 text-slate-400 flex-shrink-0"/>
-          {transitionPill(transition.toStatus)}
-        </div>
+
+const renderTransitionDetails = (transition) => (
+  <div
+    className="flex items-start gap-2.5 min-w-0"
+    data-testid="transition-record"
+  >
+    <Avatar
+      name={transition.userName || 'System'}
+      color={transition.userAvatarColor}
+      size="sm"
+      imageUrl={transition.userAvatar}
+    />
+
+    <div className="min-w-0">
+      {/* User Name Only */}
+      <p className="text-[11.2px] leading-snug font-medium text-[#343A40]">
+        {transition.userName || 'System'}
+      </p>
+
+      {/* Status Transition */}
+      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+        {transitionPill(transition.fromStatus)}
+
+        <ArrowRight className="w-3 h-3 text-slate-400 flex-shrink-0" />
+
+        {transitionPill(transition.toStatus)}
       </div>
-    </div>);
+    </div>
+  </div>
+);
+
     const feedFor = (tab) => {
         const entries = tab === 'all'
             ? [
@@ -476,27 +482,20 @@ export const IssueDetailsPage = () => {
                 ? task.comments.map(buildCommentEntry)
                 : tab === 'worklog'
                     ? timeLogs.map(buildWorkLogEntry)
-                    : tab === 'activity'
-                        ? [...task.comments.map(buildCommentEntry), ...taskActivities.map(buildActivityEntry)]
-                        : tab === 'history' || tab === 'grid'
-                            ? taskActivities.map(buildActivityEntry)
-                            : [];
+                    : tab === 'activitylog'
+                        ? taskActivities.map(buildActivityEntry)
+                        : [];
+
         return entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     };
+
     const activityFeed = feedFor(activityTab);
-    const gridRows = [...taskActivities].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const tabLabel = ACTIVITY_TABS.find(([key]) => key === activityTab)?.[1] || 'All';
     const emptyLabel = activityTab === 'transitions'
-        // The Transitions tab renders its own compact empty state inside the
-        // ~700px content column (never stretched across the Activity width).
         ? ''
-        : activityTab === 'grid'
-            ? gridRows.length === 0
-                ? `Nothing to show in ${tabLabel} yet.`
-                : ''
-            : activityFeed.length === 0
-                ? `Nothing to show in ${tabLabel} yet.`
-                : '';
+        : activityFeed.length === 0
+            ? `Nothing to show in ${tabLabel} yet.`
+            : '';
     // ---- Workflow visualisation (reuses the real workflow builder data/renderer) ----
     const workflow = workflows.find((w) => w.id === project.workflowId);
     // The public display key is the canonical Jira-style key of the issue the URL
@@ -637,82 +636,130 @@ export const IssueDetailsPage = () => {
             <IssueLinks task={task} onOpen={openByTaskId}/>
           </div>
 
-          {/* Activity: All | Comments | Work Log | History | Activity | Grid History | Transitions */}
-          <div className="order-6 bg-white rounded-2xl border border-[#e2e5ea] overflow-hidden shadow-fe-xs">
-            <div className="px-3 py-2 bg-[#f8fafc] border-b border-[#e2e5ea] flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="fe-heading tracking-wider">Activity</h3>
-              <div className="flex items-center gap-1 bg-[#f1f5f9] p-0.5 rounded-lg flex-wrap">
-                {ACTIVITY_TABS.map(([key, label]) => (<button key={key} type="button" onClick={() => setActivityTab(key)} className={`px-3 py-1.5 rounded-lg fe-control transition-colors ${activityTab === key ? 'bg-white text-[#0f766e] border border-[#99f6e4] shadow-fe-xs' : 'text-[#343A40] hover:text-[#343A40]'}`}>
-                    {label}
-                  </button>))}
-              </div>
-            </div>
+          {/* Activity: All | Comments | Work Logs | Activity Log | Status Changes */}
 
-            <div className="p-3 space-y-3">
-              {activityTab === 'comments' ? (
-        /* Jira-style Comments tab: composer + threaded list with pin /
-           edit / delete. Owns its empty state, so it bypasses the
-           shared emptyLabel above. */
-        <CommentsThread task={task}/>) : emptyLabel ? (<p className="fe-meta text-center py-4 flex items-center justify-center gap-1.5">
-                  <ListChecks className="w-3.5 h-3.5"/> {emptyLabel}
-                </p>) : activityTab === 'transitions' ? (
-        /* Compact Jira-style Activity → Transitions feed (read-only).
-           NO card/border/shadow around the list — just the Activity
-           section, a compact left-aligned content column capped at 700px
-           (680-700 target; the empty space to its right is intentional),
-           header + rows all sharing that width.
-           Grid `1fr + 200px`: "Time In Source Status" and every duration
-           start at the same x in the right portion of the ~700px column
-           (~71% across), so durations sit close to the transition content
-           — never at the Activity/page edge, no absolute positioning.
-           ~66px rows (10px padding), 32px avatar, ~14px first line with
-           pills on the second line, design-system status badges, thin 1px
-           dividers between rows.
-           Real store history first, then FALLBACK_TRANSITIONS — never an
-           empty state. Below sm the grid stacks (no horizontal overflow). */
-        <div className="w-full max-w-[700px] space-y-3">
-                  <div className="grid grid-cols-[minmax(0,1fr)_200px] max-sm:grid-cols-1">
-                    <div className="pb-2 border-b border-[#e2e5ea] fe-meta font-semibold tracking-wider">
-                      Transition
-                    </div>
-                    <div className="pb-2 border-b border-[#e2e5ea] fe-meta font-semibold whitespace-nowrap">
-                      Time In Source Status
-                    </div>
 
-                    {statusTransitions.map((transition) => (<React.Fragment key={transition.id}>
-                        <div className="flex items-center py-2.5 border-b border-[#eef0f3]">
-                          {renderTransitionDetails(transition)}
-                        </div>
-                        <div className="flex items-center py-2.5 border-b border-[#eef0f3]">
-                          <span className="fe-control tabular-nums whitespace-nowrap">
-                            {timeInSourceStatusFor(transition)}
-                          </span>
-                        </div>
-                      </React.Fragment>))}
-                  </div>
-                </div>) : activityTab === 'grid' ? (<div className="overflow-x-auto">
-                  <table className="w-full fe-control border border-[#e2e5ea]">
-                    <thead>
-                      <tr className="bg-[#f8fafc] text-left fe-meta font-semibold tracking-wider">
-                        <th className="px-3 py-2 font-semibold">When</th>
-                        <th className="px-3 py-2 font-semibold">Who</th>
-                        <th className="px-3 py-2 font-semibold">Event</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gridRows.map((activity) => {
-                const actor = users.find((u) => u.id === activity.userId);
-                return (<tr key={activity.id} className="border-t border-[#eef0f3]">
-                            <td className="px-3 py-2 whitespace-nowrap text-[#343A40]">{formatTransitionDateTime(activity.createdAt)}</td>
-                            <td className="px-3 py-2 whitespace-nowrap font-semibold text-[#343A40]">{actor?.name || 'System'}</td>
-                            <td className="px-3 py-2 text-[#343A40]">{activity.action}</td>
-                          </tr>);
-            })}
-                    </tbody>
-                  </table>
-                </div>) : (<div className="space-y-2">{activityFeed.map((entry) => <React.Fragment key={entry.id}>{entry.node}</React.Fragment>)}</div>)}
-            </div>
+<div className="order-6 bg-white rounded-2xl border border-[#e2e5ea] overflow-hidden shadow-fe-xs">
+
+  {/* Header */}
+  <div className="px-3 py-2 bg-[#f8fafc] border-b border-[#e2e5ea] flex items-center justify-between gap-2 flex-wrap">
+
+    <h3 className="fe-heading tracking-wider">Activity</h3>
+
+    <div className="flex items-center gap-1 bg-[#f1f5f9] p-0.5 rounded-lg flex-wrap">
+      {ACTIVITY_TABS.map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => setActivityTab(key)}
+          className={`px-3 py-1.5 rounded-lg fe-control transition-colors ${
+            activityTab === key
+              ? 'bg-white text-[#0f766e] border border-[#99f6e4] shadow-fe-xs'
+              : 'text-[#343A40] hover:text-[#343A40]'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {/* Content */}
+  <div className="p-3 space-y-3">
+
+    {activityTab === 'comments' ? (
+
+      <CommentsThread task={task} />
+
+    ) : emptyLabel ? (
+
+      <p className="fe-meta text-center py-4 flex items-center justify-center gap-1.5">
+        <ListChecks className="w-3.5 h-3.5" />
+        {emptyLabel}
+      </p>
+
+    ) : activityTab === 'transitions' ? (
+
+      <div className="w-full">
+
+        {/* Column Headers */}
+        <div className="grid grid-cols-[minmax(0,1fr)_190px_190px] max-md:grid-cols-1 gap-3 pb-2 border-b border-[#e2e5ea]">
+
+          <div className="fe-meta font-semibold tracking-wider">
+            Transition
           </div>
+
+          <div className="fe-meta font-semibold tracking-wider">
+            Transition Date
+          </div>
+
+          <div className="fe-meta font-semibold tracking-wider">
+            Status Started At
+          </div>
+
+        </div>
+
+        {/* Transition Records */}
+        {statusTransitions.length === 0 ? (
+
+          <p className="fe-meta text-center py-5">
+            No status changes yet
+          </p>
+
+        ) : (
+
+          statusTransitions.map((transition) => (
+
+            <div
+              key={transition.id}
+              className="grid grid-cols-[minmax(0,1fr)_190px_190px] max-md:grid-cols-1 gap-3 items-center py-2.5 border-b border-[#eef0f3]"
+            >
+
+              {/* User Name and Status */}
+              <div className="min-w-0">
+                {renderTransitionDetails(transition)}
+              </div>
+
+              {/* Actual Transition Date */}
+              <div className="min-w-0">
+                <span className="fe-control tabular-nums whitespace-nowrap">
+                  {formatTransitionDateTime(transition.changedAt)}
+                </span>
+              </div>
+
+              {/* Source Status Started Date */}
+              <div className="min-w-0">
+                <span className="fe-control tabular-nums whitespace-nowrap">
+                  {formatTransitionDateTime(
+                    sourceEnteredAtFor(transition)
+                  )}
+                </span>
+              </div>
+
+            </div>
+
+          ))
+
+        )}
+
+      </div>
+
+    ) : (
+
+      <div className="space-y-2">
+        {activityFeed.map((entry) => (
+          <React.Fragment key={entry.id}>
+            {entry.node}
+          </React.Fragment>
+        ))}
+      </div>
+
+    )}
+
+  </div>
+</div>
+
+
         </div>
 
         {/* Right sidebar: People + Dates only. Related Work Items and
