@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { usePlanStore } from '../../store/planStore';
 import { SIDEBAR_DEFAULT_WIDTH, SIDEBAR_ICON_ONLY_BELOW, SIDEBAR_MIN_WIDTH, clampSidebarWidth, readSidebarWidth, storeSidebarWidth, } from './sidebarWidth';
 export const AppShell = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,16 +15,12 @@ export const AppShell = () => {
     const mainRef = useRef(null);
     const [showScrollTop, setShowScrollTop] = useState(false);
     const location = useLocation();
+    const { currentPlan } = usePlanStore();
     const normalizedPath = location.pathname.replace(/\/+$/, '');
-    // Topbar (global search, notifications, profile) renders ONLY on the
-    // Home page (the role-based dashboard). Every other authenticated route
-    // renders its own page header (breadcrumb, module tabs, actions) and
-    // must not show the global header. The auth flow (login / sso) also
-    // runs without it.
-    const HOME_ROUTES = ['/admin', '/pm', '/tl', '/member'];
+    const HOME_ROUTES = ['/dashboard', '/admin', '/pm', '/tl', '/member'];
     const isHomeRoute = HOME_ROUTES.includes(normalizedPath);
 
-    const showTopbar = isHomeRoute;
+    const showTopbar = isHomeRoute || currentPlan === 'TRIAL';
     const toggleCollapse = () => {
         setSidebarWidth((prev) => {
             let next;
@@ -142,7 +139,7 @@ useEffect(() => {
             <Menu className="w-5 h-5"/>
           </button>)}
         <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-thin relative z-0 scroll-smooth">
-         <div className="w-full max-w-none min-w-0 mx-auto px-4 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 animate-fade-in">
+         <div className={`w-full max-w-none min-w-0 mx-auto ${/\/iterations(?:\/|$)/.test(location.pathname) ? 'px-3 sm:px-4 lg:px-4' : 'px-4 sm:px-6 lg:px-8'} pt-3 sm:pt-4 pb-8 animate-fade-in`}>
   <Outlet />
 </div>
         </main>

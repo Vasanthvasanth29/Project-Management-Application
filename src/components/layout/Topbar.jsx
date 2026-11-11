@@ -11,12 +11,17 @@ import { getProjectUrl } from '../../utils/idUtils';
 import { issuePath } from '../../utils/issueUrl';
 import { demoCredentials } from '../../data/mockData';
 import { toast } from 'sonner';
+import { usePlanStore, getPlanHomePath } from '../../store/planStore';
+import { PlanToggle } from './PlanToggle';
+import { UpgradeModal } from '../trial/UpgradeModal';
 export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { currentUser, logout, login } = useAuthStore();
     const { notifications, markNotificationRead, markAllNotificationsRead, users, projects, tasks } = useAppStore();
     const branding = useOrganizationBranding();
+    const { currentPlan } = usePlanStore();
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const [showNotifs, setShowNotifs] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [showAppLauncher, setShowAppLauncher] = useState(false);
@@ -79,7 +84,7 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
         if (res.success && res.role) {
             toast.success(`Switched to ${demo.label}`);
             closeAllDropdowns();
-            navigate(getDashboardPath(res.role));
+            navigate(getPlanHomePath(useAuthStore.getState().currentUser, usePlanStore.getState().currentPlan));
         }
     };
     const searchResults = searchQuery.length > 1 ? [
@@ -106,30 +111,41 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
                     : '/member/projects'
         })),
     ] : [];
-    const platformApps = [
-        { label: 'Dashboard', path: currentUser ? getDashboardPath(currentUser.role) : '/', icon: LayoutDashboard, color: '#0d9488', bg: '#ccfbf1' },
-        { label: 'Kanban Board', path: currentUser?.role === 'ADMIN' ? '/admin' : currentUser?.role === 'TEAM_LEADER' ? '/tl' : currentUser?.role === 'MEMBER' ? '/member' : '/pm', icon: FolderKanban, color: '#6366f1', bg: '#e0e7ff' },
-        ...(currentUser?.role === 'ADMIN'
-            ? [
-                { label: 'Users', path: '/admin/users', icon: UsersRound, color: '#7c3aed', bg: '#f3e8ff' },
-                { label: 'Roles & Permissions', path: '/admin/roles', icon: ShieldCheck, color: '#4338ca', bg: '#e0e7ff' },
-                { label: 'All Projects', path: '/admin/projects', icon: FolderKanban, color: '#2563eb', bg: '#dbeafe' },
-            ]
-            : currentUser?.role === 'PROJECT_MANAGER'
+    const platformApps = currentPlan === 'TRIAL'
+        ? [
+            { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, color: '#0d9488', bg: '#ccfbf1' },
+            { label: 'Projects', path: '/projects', icon: FolderKanban, color: '#6366f1', bg: '#e0e7ff' },
+            { label: 'My Tasks', path: '/tasks', icon: ListTodo, color: '#0284c7', bg: '#e0f2fe' },
+            { label: 'Iterations', path: '/iterations', icon: Layers, color: '#7c3aed', bg: '#f3e8ff' },
+            { label: 'Reports', path: '/reports', icon: Activity, color: '#10b981', bg: '#d1fae5' },
+            { label: 'My Todo', path: '/my-todo', icon: ListTodo, color: '#f59e0b', bg: '#fef3c7' },
+            { label: 'Notifications', path: '/notifications', icon: Bell, color: '#f59e0b', bg: '#fef3c7' },
+            { label: 'Settings', path: '/settings', icon: Settings, color: '#64748b', bg: '#f1f5f9' },
+        ]
+        : [
+            { label: 'Dashboard', path: currentUser ? getDashboardPath(currentUser.role) : '/', icon: LayoutDashboard, color: '#0d9488', bg: '#ccfbf1' },
+            { label: 'Kanban Board', path: currentUser?.role === 'ADMIN' ? '/admin' : currentUser?.role === 'TEAM_LEADER' ? '/tl' : currentUser?.role === 'MEMBER' ? '/member' : '/pm', icon: FolderKanban, color: '#6366f1', bg: '#e0e7ff' },
+            ...(currentUser?.role === 'ADMIN'
                 ? [
                     { label: 'Users', path: '/admin/users', icon: UsersRound, color: '#7c3aed', bg: '#f3e8ff' },
+                    { label: 'Roles & Permissions', path: '/admin/roles', icon: ShieldCheck, color: '#4338ca', bg: '#e0e7ff' },
+                    { label: 'All Projects', path: '/admin/projects', icon: FolderKanban, color: '#2563eb', bg: '#dbeafe' },
                 ]
+                : currentUser?.role === 'PROJECT_MANAGER'
+                    ? [
+                        { label: 'Users', path: '/admin/users', icon: UsersRound, color: '#7c3aed', bg: '#f3e8ff' },
+                    ]
+                    : []),
+            { label: 'Flagged Tasks', path: '/flagged-tasks', icon: Flag, color: '#f59e0b', bg: '#fef3c7' },
+            { label: 'My Todo', path: '/my-todo', icon: ListTodo, color: '#f59e0b', bg: '#fef3c7' },
+            ...(currentUser?.role !== 'MEMBER'
+                ? [{ label: 'Team', path: '/tl/team', icon: UsersRound, color: '#0d9488', bg: '#ccfbf1' }]
                 : []),
-        { label: 'Flagged Tasks', path: '/flagged-tasks', icon: Flag, color: '#f59e0b', bg: '#fef3c7' },
-        { label: 'My Todo', path: '/my-todo', icon: ListTodo, color: '#f59e0b', bg: '#fef3c7' },
-        ...(currentUser?.role !== 'MEMBER'
-            ? [{ label: 'Team', path: '/tl/team', icon: UsersRound, color: '#0d9488', bg: '#ccfbf1' }]
-            : []),
-        { label: 'Bugs', path: currentUser?.role === 'MEMBER' ? '/member/bugs' : '/tl/bugs', icon: Bug, color: '#ef4444', bg: '#fee2e2' },
-        { label: 'Activity', path: currentUser?.role === 'ADMIN' ? '/admin/activity' : currentUser?.role === 'PROJECT_MANAGER' ? '/pm/activity' : currentUser?.role === 'MEMBER' ? '/member/activity' : '/tl/activity', icon: Activity, color: '#10b981', bg: '#d1fae5' },
-        { label: 'Notifications', path: '/notifications', icon: Bell, color: '#f59e0b', bg: '#fef3c7' },
-        { label: 'Settings', path: '/settings', icon: Settings, color: '#64748b', bg: '#f1f5f9' },
-    ];
+            { label: 'Bugs', path: currentUser?.role === 'MEMBER' ? '/member/bugs' : '/tl/bugs', icon: Bug, color: '#ef4444', bg: '#fee2e2' },
+            { label: 'Activity', path: currentUser?.role === 'ADMIN' ? '/admin/activity' : currentUser?.role === 'PROJECT_MANAGER' ? '/pm/activity' : currentUser?.role === 'MEMBER' ? '/member/activity' : '/tl/activity', icon: Activity, color: '#10b981', bg: '#d1fae5' },
+            { label: 'Notifications', path: '/notifications', icon: Bell, color: '#f59e0b', bg: '#fef3c7' },
+            { label: 'Settings', path: '/settings', icon: Settings, color: '#64748b', bg: '#f1f5f9' },
+        ];
     if (!currentUser)
         return null;
     return (<header className="h-16 flex items-center justify-between gap-4 px-4 lg:px-6 bg-white border-b border-[#e0e2ec] flex-shrink-0 z-30 sticky top-0">
@@ -139,13 +155,27 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
           {sidebarOpen ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
         </button>
 
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate(getDashboardPath(currentUser.role))}>
+        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate(getPlanHomePath(currentUser, currentPlan))}>
           {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title={branding.name} className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform border border-[#e2e5ea]"/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" className="w-8 h-8 object-contain flex-shrink-0 group-hover:scale-105 transition-transform" />)}
           <div className="flex items-baseline gap-1.5">
             <span className="font-bold text-[#1a1d23] text-base tracking-tight font-display">Limber Lithe</span>
-            <span className="text-[10px] font-semibold text-[#0d9488] bg-[#ccfbf1] px-1.5 py-0.5 rounded-md hidden sm:inline-block">
-              Enterprise
-            </span>
+            {currentPlan === 'TRIAL' ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUpgradeModalOpen(true);
+                }}
+                className="text-[10px] font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-200 px-1.5 py-0.5 rounded-md hidden sm:inline-block cursor-pointer transition-colors"
+                title="Click to upgrade plan"
+              >
+                Free Trial
+              </button>
+            ) : (
+              <span className="text-[10px] font-semibold text-[#0d9488] bg-[#ccfbf1] px-1.5 py-0.5 rounded-md hidden sm:inline-block">
+                Enterprise
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -183,6 +213,7 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5 lg:gap-2">
+        <PlanToggle />
         <button className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f0fdfa] hover:bg-[#ccfbf1] text-[#0d9488] text-xs font-semibold transition-all border border-[#ccfbf1]" onClick={() => navigate('/my-todo')} title="Quick Add">
           <Plus className="w-3.5 h-3.5"/>
           <span>Quick Add</span>
@@ -321,5 +352,6 @@ export const Topbar = ({ onMenuToggle, sidebarOpen }) => {
           </div>)}
       </div>
     </div>
+    <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
     </header>);
 };

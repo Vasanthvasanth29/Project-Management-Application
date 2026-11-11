@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, LayoutGrid, X, MessageSquare, Trash2, Ban, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, LayoutGrid, X, MessageSquare, Trash2, Ban, RotateCcw, Calendar, ListTree, Filter, ChevronDown, ChevronRight, ChevronsRight, Check, Search, Pin, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
 import { RichTextEditor } from '../../components/common/RichTextEditor';
 import { IterationHeader } from '../../components/common/IterationHeader';
+import { ProgressBar } from '../../components/common/ProgressBar';
+import { SprintStatusBadge } from '../../components/common/Badges';
 import { getPriorityDotColor, isCancelledWorkItem } from '../../utils/roleUtils';
 import { getIssueKeyPrefix } from '../../utils/projectIdentity';
 import { piNumberForSprint } from '../../utils/programIncrement';
@@ -13,11 +15,6 @@ import { matchId } from '../../utils/idUtils';
 import { sortProjectSprints, buildProjectTeamMembers, buildSprintIssuesMap, } from '../../utils/sprintIssues';
 import { useIterationPaths } from './IterationModuleLayout';
 import { BOARD_COLUMNS, columnLabel, columnOfStatus, statusForColumn, canTransition, isValidDropTarget, needsComment, } from './sprintBoardTransitions';
-const FILTERS = [
-  { id: 'my', label: 'Only My Work Items' },
-  { id: 'all', label: 'All Work Items' },
-  { id: 'recent', label: 'Recently Updated' },
-];
 const COLUMN_DOTS = {
   TODO: 'bg-[#6b778c]',
   IN_PROGRESS: 'bg-[#0052cc]',
@@ -60,7 +57,6 @@ const issueStatusLabel = (status) => {
   }
 };
 const typeLabel = (type) => type === 'SUB-TASK' ? 'Sub-task' : type === 'BUG_FIX' ? 'Bug' : type === 'EPIC' ? 'Epic' : type === 'BUG' ? 'Bug' : type === 'TASK' ? 'Task' : type === 'STORY' ? 'Story' : type;
-// Compact card-only abbreviation for the issue type badge in the bottom metadata row.
 const TYPE_BADGE = {
   INITIATIVE: { label: 'IN', className: 'bg-fuchsia-100 text-fuchsia-800' },
   FEATURE: { label: 'FT', className: 'bg-indigo-100 text-indigo-800' },
@@ -72,41 +68,28 @@ const TYPE_BADGE = {
   BUG_FIX: { label: 'BG', className: 'bg-red-100 text-red-800' },
   IMPROVEMENT: { label: 'IM', className: 'bg-amber-100 text-amber-800' },
 };
+
 const fmtDate = (iso) => {
-  if (!iso)
-    return '—';
+  if (!iso) return '—';
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime()))
-    return '—';
+  if (Number.isNaN(d.getTime())) return '—';
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${String(d.getDate()).padStart(2, '0')}/${months[d.getMonth()]}/${String(d.getFullYear()).slice(-2)}`;
 };
-// Compact Jira-style sprint date range for the header: "29 SEP - 12 OCT".
-const fmtRange = (startIso, endIso) => {
-  const short = (iso) => {
-    if (!iso)
-      return null;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime()))
-      return null;
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}`;
-  };
-  const from = short(startIso);
-  const to = short(endIso);
-  if (!from || !to)
-    return `${fmtDate(startIso)} - ${fmtDate(endIso)}`;
-  return `${from} - ${to}`;
+
+const formatDay = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
 };
+
 const fmtDateTime = (iso) => {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime()))
-    return '';
+  if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
-// Comment bodies come from the rich text editor as HTML. An empty editor serialises
-// to "<p></p>", so tags are stripped to decide whether the user actually wrote
-// anything — a comment (and a screenshot) are always optional.
+
 const isBlankHtml = (html) => {
   const withoutImages = html.replace(/<img\b[^>]*>/gi, '');
   return withoutImages
@@ -114,13 +97,14 @@ const isBlankHtml = (html) => {
     .replace(/&nbsp;/gi, ' ')
     .trim().length === 0;
 };
+
 const buildCommentContent = (html, image) => {
   const body = html && !isBlankHtml(html) ? html.trim() : '';
   const imagePart = image ? `<img src="${image}" alt="Pasted screenshot" />` : '';
-  if (body && imagePart)
-    return `${body}<br/>${imagePart}`;
+  if (body && imagePart) return `${body}<br/>${imagePart}`;
   return body || imagePart;
 };
+
 const makePasteAttachment = (image) => {
   const comma = image.indexOf(',');
   const bytes = comma >= 0 ? Math.max(1, Math.round((image.length - comma - 1) * 0.75)) : image.length;
@@ -132,6 +116,83 @@ const makePasteAttachment = (image) => {
     attachedAt: new Date().toISOString(),
   };
 };
+
+const buildColumnOrder = (issuesList) => ({
+  TODO: issuesList.filter((i) => columnOfStatus(i.status) === 'TODO').map((i) => i.id),
+  IN_PROGRESS: issuesList.filter((i) => columnOfStatus(i.status) === 'IN_PROGRESS').map((i) => i.id),
+  DONE: issuesList.filter((i) => columnOfStatus(i.status) === 'DONE').map((i) => i.id),
+});
+
+const DEFAULT_PINNED_IDS = ['u-pm-01', 'u-m-01', 'u-m-02', 'u-m-03', 'u-m-04', 'u-m-05'];
+const DEFAULT_ISSUE_COUNTS = {
+  'u-pm-01': 28,
+  'u-m-01': 24,
+  'u-m-02': 20,
+  'u-m-03': 18,
+  'u-m-04': 16,
+  'u-m-05': 14,
+};
+
+const readPinnedIds = (storageKey) => {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return DEFAULT_PINNED_IDS;
+};
+
+const writePinnedIds = (storageKey, ids) => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(ids));
+  } catch {
+    // ignore storage errors
+  }
+};
+
+const toMemberOption = (id, name, { initial, color, avatarUrl } = {}) => ({
+  id,
+  name,
+  displayName: name.split(' ')[0],
+  initial: initial || name[0],
+  color: color || '#3b82f6',
+  avatarUrl,
+});
+
+const filterMembersByQuery = (members, query) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return members;
+  return members.filter(
+    (m) =>
+      (m.displayName || '').toLowerCase().includes(q) ||
+      (m.name || '').toLowerCase().includes(q)
+  );
+};
+
+const useOutsideClick = (ref, active, onClose) => {
+  useEffect(() => {
+    if (!active) return;
+    const onMouseDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [ref, active, onClose]);
+};
+
+const MemberAvatar = ({ src, alt, initial, color, sizeClass = 'w-5 h-5 text-[9px]' }) => (
+  <span
+    className={`${sizeClass} rounded-full overflow-hidden flex items-center justify-center font-bold text-white flex-shrink-0`}
+    style={{ backgroundColor: color }}
+  >
+    {src ? <img src={src} alt={alt} className="w-full h-full object-cover" /> : initial}
+  </span>
+);
+
 export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -140,7 +201,36 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
   const { currentUser } = useAuthStore();
   const requestedSprintParam = sprint?.id || sprintId || searchParams.get('sprintId') || searchParams.get('sprint') || searchParams.get('iteration');
   const projectSprints = useMemo(() => sortProjectSprints(sprints, project.id), [sprints, project.id]);
+  const [selectedSprintId, setSelectedSprintId] = useState(() => {
+    if (sprint?.id) return sprint.id;
+    if (requestedSprintParam) {
+      const found = projectSprints.find((s) => matchId(s.id, requestedSprintParam) || s.iterationNumber === requestedSprintParam || s.name === requestedSprintParam);
+      if (found) return found.id;
+    }
+    const active = projectSprints.find((s) => s.status === 'ACTIVE');
+    return active?.id || projectSprints[0]?.id;
+  });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedPiFilter, setSelectedPiFilter] = useState(null);
+  const [piFilterOpen, setPiFilterOpen] = useState(false);
+  const piMenuRef = useRef(null);
+  const closePiFilter = useCallback(() => setPiFilterOpen(false), []);
+  useOutsideClick(piMenuRef, piFilterOpen, closePiFilter);
+
+  useEffect(() => {
+    if (sprint?.id) {
+      setSelectedSprintId(sprint.id);
+    } else if (requestedSprintParam) {
+      const found = projectSprints.find((s) => matchId(s.id, requestedSprintParam) || s.iterationNumber === requestedSprintParam || s.name === requestedSprintParam);
+      if (found) setSelectedSprintId(found.id);
+    }
+  }, [sprint?.id, requestedSprintParam, projectSprints]);
+
   const activeSprint = useMemo(() => {
+    if (selectedSprintId) {
+      const found = projectSprints.find((s) => s.id === selectedSprintId);
+      if (found) return found;
+    }
     if (sprint)
       return sprint;
     if (requestedSprintParam) {
@@ -149,8 +239,32 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
         return found;
     }
     return projectSprints.find((s) => s.status === 'ACTIVE') || projectSprints[0];
-  }, [sprint, requestedSprintParam, projectSprints]);
-  // Project → PI → Iteration: the PI this live iteration belongs to.
+  }, [selectedSprintId, sprint, requestedSprintParam, projectSprints]);
+
+  const availableIterations = useMemo(() => {
+    return projectSprints.filter((s) => s.status !== 'ARCHIVED');
+  }, [projectSprints]);
+
+  const projectPis = useMemo(() => {
+    const map = new Map();
+    availableIterations.forEach((s) => {
+      const num = piNumberForSprint(s, pis);
+      if (num !== undefined && !map.has(num)) {
+        const foundPi = pis.find((p) => p.id === s.piId || p.number === num);
+        map.set(num, {
+          number: num,
+          label: foundPi?.name || `PI ${num}`,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.number - b.number);
+  }, [availableIterations, pis]);
+
+  const filteredIterations = useMemo(() => {
+    if (selectedPiFilter === null) return availableIterations;
+    return availableIterations.filter((s) => piNumberForSprint(s, pis) === selectedPiFilter);
+  }, [availableIterations, selectedPiFilter, pis]);
+
   const activePiNumber = useMemo(() => (activeSprint ? piNumberForSprint(activeSprint, pis) : undefined), [activeSprint, pis]);
   const projectTeamMembers = useMemo(() => buildProjectTeamMembers(project, teams, users), [project, teams, users]);
   const projectKey = getIssueKeyPrefix(project) || 'PRJ';
@@ -165,8 +279,29 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
   }), [tasks, users, project, project.id, projectKey, projectTeamMembers, projectSprints]);
   const issues = useMemo(() => (activeSprint ? issuesBySprint[activeSprint.id] || [] : []), [issuesBySprint, activeSprint]);
   const storeTaskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
+
+  const pinnedStorageKey = `kanban_pinned_members_${currentUser?.id || 'guest'}_${project?.id || 'default'}`;
+  const [pinnedMemberIds, setPinnedMemberIds] = useState(() => readPinnedIds(pinnedStorageKey));
+
+  useEffect(() => {
+    setPinnedMemberIds(readPinnedIds(pinnedStorageKey));
+    setSelectedMemberId(null);
+  }, [pinnedStorageKey]);
+
   const [activeFilter, setActiveFilter] = useState('my');
-  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSearchQuery, setAddSearchQuery] = useState('');
+  const [selectedAddIds, setSelectedAddIds] = useState([]);
+  const addMenuRef = useRef(null);
+  const closeAdd = useCallback(() => setAddOpen(false), []);
+  useOutsideClick(addMenuRef, addOpen, closeAdd);
+
+  const [draggedChipId, setDraggedChipId] = useState(null);
+  const [dragOverChipId, setDragOverChipId] = useState(null);
+  const suppressChipClickRef = useRef(false);
+
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverStatus, setDragOverStatus] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -175,25 +310,22 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentImage, setCommentImage] = useState(null);
-  // Assignee chosen in the transition dialog (undefined = keep current).
   const [pendingAssigneeId, setPendingAssigneeId] = useState(undefined);
   const [detailItemId, setDetailItemId] = useState(null);
-  const [columnOrder, setColumnOrder] = useState(() => ({
-    TODO: issues.filter((i) => columnOfStatus(i.status) === 'TODO').map((i) => i.id),
-    IN_PROGRESS: issues.filter((i) => columnOfStatus(i.status) === 'IN_PROGRESS').map((i) => i.id),
-    DONE: issues.filter((i) => columnOfStatus(i.status) === 'DONE').map((i) => i.id),
-  }));
-  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [columnOrder, setColumnOrder] = useState(() => buildColumnOrder(issues));
+
+  useEffect(() => {
+    setColumnOrder(buildColumnOrder(issues));
+  }, [activeSprint?.id]);
   const [hoverCardId, setHoverCardId] = useState(null);
-  // Workflow state lives in the store (shared with the Iteration Board) so status and
-  // terminal resolution survive navigation and stay in sync across boards.
+
   const statusOf = (issue) => {
     const storeTask = storeTaskById.get(issue.id);
     if (storeTask)
       return storeTask.status;
     return issueStatusOverrides[issue.id] ?? issue.status;
   };
-  // Cancelled is a real terminal status (legacy DONE + resolution still maps here).
+
   const isCancelled = (issueId) => {
     const storeTask = storeTaskById.get(issueId);
     if (storeTask)
@@ -201,8 +333,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     const status = issueStatusOverrides[issueId];
     return status === 'CANCELLED' || issueResolutions[issueId] === 'CANCELLED';
   };
-  // Meta for the override setters: who moved the issue and where it came from,
-  // so a transition record is appended for board issues that are not store tasks.
+
   const issueById = (issueId) => issues.find((i) => i.id === issueId);
   const overrideMeta = (issueId) => {
     const issue = issueById(issueId);
@@ -213,34 +344,181 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       userId: currentUser?.id,
     };
   };
+
+  const availableProjectMembers = useMemo(() => {
+    const map = new Map();
+    const userById = new Map(users.map((u) => [u.id, u]));
+
+    projectTeamMembers.forEach((u) => {
+      map.set(u.id, toMemberOption(u.id, u.name, { color: u.avatarColor || '#2563eb', avatarUrl: u.avatarUrl }));
+    });
+
+    issues.forEach((i) => {
+      if (i.assigneeName && i.assigneeName !== 'Unassigned') {
+        const foundUser = users.find((u) => u.name === i.assigneeName || u.name.split(' ')[0] === i.assigneeName);
+        const id = foundUser?.id || i.assigneeName;
+        if (!map.has(id)) {
+          map.set(id, toMemberOption(id, i.assigneeName, {
+            initial: i.assigneeInitial,
+            color: i.assigneeAvatarColor || foundUser?.avatarColor,
+            avatarUrl: i.avatarUrl || foundUser?.avatarUrl,
+          }));
+        }
+      }
+    });
+
+    tasks.forEach((t) => {
+      if (t.projectId === project.id && t.assigneeId && !map.has(t.assigneeId)) {
+        const u = userById.get(t.assigneeId);
+        if (u) map.set(u.id, toMemberOption(u.id, u.name, { color: u.avatarColor, avatarUrl: u.avatarUrl }));
+      }
+    });
+
+    users.forEach((u) => {
+      if (u.status !== 'INACTIVE' && !map.has(u.id)) {
+        map.set(u.id, toMemberOption(u.id, u.name, { color: u.avatarColor, avatarUrl: u.avatarUrl }));
+      }
+    });
+
+    return Array.from(map.values());
+  }, [projectTeamMembers, issues, users, tasks, project.id]);
+
+  const memberById = useMemo(
+    () => new Map(availableProjectMembers.map((m) => [m.id, m])),
+    [availableProjectMembers]
+  );
+
+  const matchesMember = useCallback(
+    (issue, member) => {
+      if (!issue || !member) return false;
+      const storeTask = storeTaskById.get(issue.id);
+      if (storeTask?.assigneeId && storeTask.assigneeId === member.id) {
+        return true;
+      }
+      const aName = (issue.assigneeName || '').trim().toLowerCase();
+      const mName = (member.name || '').trim().toLowerCase();
+      const mDisplay = (member.displayName || '').trim().toLowerCase();
+
+      if (aName === mName || aName === mDisplay) return true;
+      if (mDisplay && (aName.startsWith(mDisplay + ' ') || aName === mDisplay)) return true;
+      if (mName && aName.includes(mName)) return true;
+      return false;
+    },
+    [storeTaskById]
+  );
+
+  const memberIssueCounts = useMemo(() => {
+    const counts = {};
+    availableProjectMembers.forEach((m) => {
+      const directCount = tasks.filter(
+        (t) =>
+          t.projectId === project.id &&
+          (t.assigneeId === m.id ||
+            t.assigneeName === m.name ||
+            t.assigneeName === m.displayName)
+      ).length;
+
+      let sprintCount = 0;
+      Object.values(issuesBySprint).forEach((sprintList) => {
+        sprintList.forEach((issue) => {
+          if (matchesMember(issue, m)) sprintCount++;
+        });
+      });
+
+      counts[m.id] = Math.max(directCount, sprintCount, DEFAULT_ISSUE_COUNTS[m.id] || 0);
+    });
+    return counts;
+  }, [availableProjectMembers, tasks, project.id, issuesBySprint, matchesMember]);
+
+  const pinnedMembers = useMemo(
+    () => pinnedMemberIds.map((id) => memberById.get(id)).filter(Boolean),
+    [pinnedMemberIds, memberById]
+  );
+
+  const unpinnedMembers = useMemo(() => {
+    const pinnedSet = new Set(pinnedMemberIds);
+    return filterMembersByQuery(
+      availableProjectMembers.filter((m) => !pinnedSet.has(m.id)),
+      addSearchQuery
+    );
+  }, [availableProjectMembers, pinnedMemberIds, addSearchQuery]);
+
   const filteredIssues = useMemo(() => {
     let list = issues;
-    if (selectedAssignee) {
-      list = list.filter((i) => i.assigneeName === selectedAssignee);
+
+    if (activeFilter === 'my') {
+      const me = (currentUser?.name || '').trim().toLowerCase();
+      const meFirst = me.split(' ')[0];
+      list = list.filter((i) => {
+        const aName = (i.assigneeName || '').trim().toLowerCase();
+        if (!aName || aName === 'unassigned') return false;
+        return aName === me || aName === meFirst || (meFirst && aName.startsWith(meFirst + ' '));
+      });
     }
-    else if (activeFilter === 'my') {
-      const me = currentUser?.name || '';
-      list = list.filter((i) => i.assigneeName === me);
+
+    if (selectedMemberId) {
+      const selectedMember = memberById.get(selectedMemberId);
+      if (selectedMember) {
+        list = list.filter((issue) => matchesMember(issue, selectedMember));
+      }
     }
+
     if (activeFilter === 'recent') {
       list = [...list].sort((a, b) => (b.updatedDate || '').localeCompare(a.updatedDate || ''));
     }
+
     return list;
-  }, [issues, activeFilter, selectedAssignee, currentUser]);
-  const assignees = useMemo(() => {
-    const seen = new Map();
-    issues.forEach((i) => {
-      if (i.assigneeName && i.assigneeName !== 'Unassigned' && !seen.has(i.assigneeName)) {
-        seen.set(i.assigneeName, {
-          name: i.assigneeName,
-          initial: i.assigneeInitial,
-          color: i.assigneeAvatarColor,
-          avatarUrl: i.avatarUrl,
-        });
-      }
+  }, [issues, activeFilter, currentUser, selectedMemberId, memberById, matchesMember]);
+
+  const updatePinnedMemberIds = useCallback((updater) => {
+    setPinnedMemberIds((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      writePinnedIds(pinnedStorageKey, next);
+      return next;
     });
-    return Array.from(seen.values());
-  }, [issues]);
+  }, [pinnedStorageKey]);
+
+  const togglePin = (memberId) => {
+    updatePinnedMemberIds((prev) =>
+      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+    );
+    setSelectedMemberId((prev) => (prev === memberId ? null : prev));
+  };
+
+  const reorderPinnedMembers = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    updatePinnedMemberIds((prev) => {
+      const fromIdx = prev.indexOf(sourceId);
+      const toIdx = prev.indexOf(targetId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+  };
+
+  const toggleAddCandidate = (memberId) => {
+    setSelectedAddIds((prev) =>
+      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+    );
+  };
+
+  const handleAddSelectedMembers = () => {
+    if (selectedAddIds.length === 0) return;
+    updatePinnedMemberIds((prev) => {
+      const existing = new Set(prev);
+      const additions = selectedAddIds.filter((id) => !existing.has(id));
+      return additions.length > 0 ? [...prev, ...additions] : prev;
+    });
+    setSelectedAddIds([]);
+    setAddSearchQuery('');
+    setAddOpen(false);
+  };
+
+  const handleToggleMemberFilter = (memberId) => {
+    setSelectedMemberId((prev) => (prev === memberId ? null : memberId));
+  };
   const columnItems = useMemo(() => {
     const visibleIds = new Set(filteredIssues.map((i) => i.id));
     const byId = new Map(filteredIssues.map((i) => [i.id, i]));
@@ -265,8 +543,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       out[columnOfStatus(statusOf(it))].push(it);
       placed.add(it.id);
     }
-    // DONE holds the terminal states: cancelled work is grouped first, delivered work
-    // after — mirroring the reference board without touching the transition matrix.
+    // Terminal states: group cancelled items before completed ones in DONE column.
     if (out.DONE.some((i) => isCancelled(i.id))) {
       out.DONE = [
         ...out.DONE.filter((i) => isCancelled(i.id)),
@@ -276,21 +553,24 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredIssues, columnOrder, issueStatusOverrides, issueResolutions, storeTaskById]);
+
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key !== 'Escape')
-        return;
+      if (e.key !== 'Escape') return;
       if (showCommentModal) {
         resetPending();
-      }
-      else if (detailItemId) {
+      } else if (detailItemId) {
         setDetailItemId(null);
+      } else if (addOpen) {
+        setAddOpen(false);
+      } else if (piFilterOpen) {
+        setPiFilterOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCommentModal, detailItemId]);
+  }, [showCommentModal, detailItemId, addOpen, piFilterOpen]);
+
   const resetPending = () => {
     setPendingTransition(null);
     setShowCommentModal(false);
@@ -298,8 +578,16 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     setCommentImage(null);
     setPendingAssigneeId(undefined);
   };
-  // Applies a confirmed transition. The status only changes here — never before the
-  // comment modal (when one is required) has been confirmed with Continue.
+
+  const clearDragState = () => {
+    setDraggedItem(null);
+    setDragOverStatus(null);
+    setDragOverIndex(null);
+    setDoneZone(null);
+    setHoverCardId(null);
+  };
+
+  // Applies confirmed transition to store task or issue override with optional comment.
   const applyTransition = (issueId, to, text, image) => {
     const storeTask = storeTaskById.get(issueId);
     const newStatus = statusForColumn(to);
@@ -312,8 +600,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       if (to === 'DONE') {
         updates.resolution = storeTask.resolution === 'CANCELLED' ? 'CANCELLED' : 'DONE';
         updates.resolvedAt = storeTask.resolvedAt || new Date().toISOString();
-      }
-      else {
+      } else {
         updates.resolution = undefined;
         updates.resolvedAt = undefined;
       }
@@ -325,48 +612,41 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       if (content) {
         addComment(issueId, currentUser?.id || 'u-pm-01', content, image ? [makePasteAttachment(image)] : []);
       }
-    }
-    else {
+    } else {
       setIssueStatusOverride(issueId, newStatus, overrideMeta(issueId));
       if (content) {
         addIssueComment(issueId, currentUser?.id || 'u-pm-01', content, image ? [makePasteAttachment(image)] : []);
       }
     }
   };
-  // Terminal state inside the DONE column: cancel / restore a finished work item.
-  // Cancelled is a real status of its own - never DONE + resolution.
+
+  // Cancel or restore a completed work item in the DONE column.
   const toggleCancelled = (issueId) => {
     const storeTask = storeTaskById.get(issueId);
     const cancelled = isCancelled(issueId);
     if (storeTask) {
-      if (cancelled) {
-        const res = updateTask(issueId, {
-          status: 'DONE',
-          resolution: 'DONE',
-          resolvedAt: storeTask.resolvedAt || new Date().toISOString(),
-          completedAt: storeTask.completedAt || new Date().toISOString(),
-        }, currentUser?.id || 'u-pm-01');
-        if (!res.ok)
-          toast.error(res.reason || 'That move is not allowed.');
-      }
-      else {
-        const res = updateTask(issueId, {
-          status: 'CANCELLED',
-          resolution: undefined,
-          resolvedAt: undefined,
-          completedAt: undefined,
-        }, currentUser?.id || 'u-pm-01');
-        if (!res.ok)
-          toast.error(res.reason || 'That move is not allowed.');
-      }
-    }
-    else if (cancelled) {
+      const updates = cancelled
+        ? {
+            status: 'DONE',
+            resolution: 'DONE',
+            resolvedAt: storeTask.resolvedAt || new Date().toISOString(),
+            completedAt: storeTask.completedAt || new Date().toISOString(),
+          }
+        : {
+            status: 'CANCELLED',
+            resolution: undefined,
+            resolvedAt: undefined,
+            completedAt: undefined,
+          };
+      const res = updateTask(issueId, updates, currentUser?.id || 'u-pm-01');
+      if (!res.ok) toast.error(res.reason || 'That move is not allowed.');
+    } else if (cancelled) {
       setIssueStatusOverride(issueId, 'DONE', { ...overrideMeta(issueId), resolution: 'DONE' });
-    }
-    else {
+    } else {
       setIssueStatusOverride(issueId, 'CANCELLED', overrideMeta(issueId));
     }
   };
+
   const reorderInColumn = (id, col, index) => {
     setColumnOrder((prev) => {
       const rest = prev[col].filter((x) => x !== id);
@@ -376,44 +656,39 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       return { ...prev, [col]: next };
     });
   };
+
   const handleDragStart = (issue, e) => {
     e.dataTransfer.setData('text/plain', issue.id);
     e.dataTransfer.effectAllowed = 'move';
     setDraggedItem({ id: issue.id, column: columnOfStatus(statusOf(issue)) });
   };
+
   const handleDragEnd = () => {
-    setDraggedItem(null);
-    setDragOverStatus(null);
-    setDragOverIndex(null);
-    setDoneZone(null);
-    setHoverCardId(null);
+    clearDragState();
   };
+
   const markDragOver = (col, valid) => {
     setDragOverStatus((prev) => prev && prev.column === col && prev.valid === valid ? prev : { column: col, valid });
   };
+
   const handleColumnDragOver = (col, e) => {
-    if (!draggedItem)
-      return;
+    if (!draggedItem) return;
     const valid = isValidDropTarget(draggedItem.column, col);
-    // A stale zone highlight must not survive the pointer leaving the target.
-    if (!e.target.closest('[data-done-zone]'))
-      setDoneZone(null);
+    if (!e.target.closest('[data-done-zone]')) setDoneZone(null);
     markDragOver(col, valid);
     setDragOverIndex({ column: col, index: columnItems[col].length });
     if (valid) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-    }
-    else {
+    } else {
       e.dataTransfer.dropEffect = 'none';
     }
   };
+
   const handleCardDragOver = (issue, col, index, e) => {
     e.stopPropagation();
-    // Cards never sit inside a zone, so hovering one clears any zone highlight.
     setDoneZone(null);
-    if (!draggedItem)
-      return;
+    if (!draggedItem) return;
     const valid = isValidDropTarget(draggedItem.column, col);
     markDragOver(col, valid);
     setDragOverIndex({ column: col, index });
@@ -421,98 +696,74 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     if (valid) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-    }
-    else {
+    } else {
       e.dataTransfer.dropEffect = 'none';
     }
   };
+
   const handleColumnDragLeave = (e) => {
-    if (e.currentTarget.contains(e.relatedTarget))
-      return;
+    if (e.currentTarget.contains(e.relatedTarget)) return;
     setDragOverStatus(null);
     setDragOverIndex(null);
     setDoneZone(null);
   };
+
   const handleDrop = (col, e) => {
     e.preventDefault();
     const id = e.dataTransfer.getData('text/plain') || draggedItem?.id;
     const insertIndex = dragOverIndex && dragOverIndex.column === col ? dragOverIndex.index : columnItems[col].length;
-    setDragOverStatus(null);
-    setDragOverIndex(null);
-    setDraggedItem(null);
-    setDoneZone(null);
-    if (!id)
-      return;
+    clearDragState();
+    if (!id) return;
     const issue = issues.find((i) => i.id === id);
-    if (!issue)
-      return;
+    if (!issue) return;
     const from = columnOfStatus(statusOf(issue));
     if (from === col) {
       reorderInColumn(id, col, insertIndex);
       return;
     }
-    if (!canTransition(from, col))
-      return;
+    if (!canTransition(from, col)) return;
     if (needsComment(from, col)) {
       setPendingTransition({ itemId: id, from, to: col });
       setShowCommentModal(true);
-    }
-    else {
+    } else {
       applyTransition(id, col, '', null);
     }
   };
-  // ---- Drag-only DONE drop targets (Cancelled / Done) ----
+
   const handleDoneZoneDragOver = (zone, e) => {
-    if (!draggedItem)
-      return;
+    if (!draggedItem) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDoneZone(zone);
   };
+
   const handleDoneZoneDrop = (zone, e) => {
     e.stopPropagation();
     const id = e.dataTransfer.getData('text/plain') || draggedItem?.id;
     const issue = id ? issues.find((i) => i.id === id) : undefined;
     const from = issue ? columnOfStatus(statusOf(issue)) : null;
-    const clearDragState = () => {
-      setDraggedItem(null);
-      setDragOverStatus(null);
-      setDragOverIndex(null);
-      setDoneZone(null);
-      setHoverCardId(null);
-    };
+
     if (zone === 'DONE') {
       if (issue && from === 'DONE') {
-        // Already terminal: "Done" restores a cancelled card (the existing
-        // toggle the card's Ban button uses); an intact card needs no change.
         e.preventDefault();
         clearDragState();
-        if (isCancelled(issue.id))
-          toggleCancelled(issue.id);
+        if (isCancelled(issue.id)) toggleCancelled(issue.id);
         return;
       }
-      // Cross-column: existing transition logic verbatim (comment step,
-      // applyTransition) — the same path a plain drop on DONE takes.
       setDoneZone(null);
       handleDrop('DONE', e);
       return;
     }
-    // ---- Cancelled target ----
+
     e.preventDefault();
     clearDragState();
-    if (!issue || from === null)
-      return;
+    if (!issue || from === null) return;
     if (from === 'DONE') {
-      // Already terminal: cancel it (a no-op when it is already cancelled).
-      if (!isCancelled(issue.id))
-        toggleCancelled(issue.id);
+      if (!isCancelled(issue.id)) toggleCancelled(issue.id);
       return;
     }
-    if (!canTransition(from, 'DONE'))
-      return;
-    // The terminal move, folded into one update: the issue lands on the real
-    // CANCELLED status (never DONE + resolution), no comment step — mirroring
-    // the card's Ban button.
+    if (!canTransition(from, 'DONE')) return;
+
     const storeTask = storeTaskById.get(issue.id);
     if (storeTask) {
       updateTask(issue.id, {
@@ -521,41 +772,19 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
         resolution: undefined,
         resolvedAt: undefined,
       }, currentUser?.id || 'u-pm-01');
-    }
-    else {
-      // One setter call records the whole terminal move into CANCELLED.
+    } else {
       setIssueStatusOverride(issue.id, 'CANCELLED', overrideMeta(issue.id));
     }
   };
-  // Issue key -> the canonical Story/Issue Details page at /member/tasks/{key},
-  // the same URL shape every other listing navigates with. The issue's own
-  // displayed key is used verbatim so the URL matches what the user clicked;
-  // resolution (and on-demand materialisation of a seed issue into a real
-  // Task) happens on that page via resolveTaskByIssueKey.
+
   const openIssueDetailsPage = (issue) => {
     navigate(`/member/tasks/${issue.key}`);
   };
-  const pickFilter = (mode) => {
-    setActiveFilter(mode);
-    setSelectedAssignee(null);
-  };
-  const toggleMember = (name) => {
-    if (selectedAssignee === name) {
-      setSelectedAssignee(null);
-      return;
-    }
-    setSelectedAssignee(name);
-    setActiveFilter('all');
-  };
-  // Continue is always allowed: the comment (and a pasted screenshot) are optional.
+
   const handleCommentContinue = () => {
-    if (!pendingTransition)
-      return;
+    if (!pendingTransition) return;
     const issue = issues.find((i) => i.id === pendingTransition.itemId);
     applyTransition(pendingTransition.itemId, pendingTransition.to, commentText, commentImage);
-    // Jira-style dialog: an assignee picked with the transition is applied in
-    // the same action. Store issues take the real field; seed issues write the
-    // shared assignee override so every board/list agrees without materialising.
     if (issue && pendingAssigneeId !== undefined) {
       const storeTask = storeTaskById.get(issue.id);
       const currentId = storeTask
@@ -570,9 +799,9 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     }
     resetPending();
   };
+
   const moveToFromDetail = (issueId, from, to) => {
-    if (!canTransition(from, to))
-      return;
+    if (!canTransition(from, to)) return;
     if (needsComment(from, to)) {
       setDetailItemId(null);
       setPendingTransition({ itemId: issueId, from, to });
@@ -581,40 +810,34 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     }
     applyTransition(issueId, to, '', null);
   };
-  // Ctrl+V screenshot support: works whether focus sits inside the rich text editor
-  // (which hands the image over via onImagePaste) or anywhere else in the modal.
+
   const captureImagePaste = useCallback((clipboardData) => {
     const items = clipboardData?.items;
-    if (!items)
-      return false;
+    if (!items) return false;
     for (const item of Array.from(items)) {
-      if (!item.type.startsWith('image/'))
-        continue;
+      if (!item.type.startsWith('image/')) continue;
       const file = item.getAsFile();
-      if (!file)
-        continue;
+      if (!file) continue;
       const reader = new FileReader();
       reader.onload = () => {
-        if (typeof reader.result === 'string')
-          setCommentImage(reader.result);
+        if (typeof reader.result === 'string') setCommentImage(reader.result);
       };
       reader.readAsDataURL(file);
       return true;
     }
     return false;
   }, []);
+
   useEffect(() => {
-    if (!showCommentModal)
-      return;
+    if (!showCommentModal) return;
     const onPaste = (e) => {
-      // The editor already claimed this paste and stored the screenshot.
-      if (e.defaultPrevented)
-        return;
+      if (e.defaultPrevented) return;
       captureImagePaste(e.clipboardData);
     };
     document.addEventListener('paste', onPaste);
     return () => document.removeEventListener('paste', onPaste);
   }, [showCommentModal, captureImagePaste]);
+
   if (!activeSprint) {
     return (<div className="flex-1 min-w-0 pt-1 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
@@ -632,6 +855,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
       </div>
     </div>);
   }
+
   const endMs = new Date(activeSprint.endDate).getTime();
   const daysLeft = Number.isNaN(endMs) ? 0 : Math.max(0, Math.ceil((endMs - Date.now()) / 86400000));
   const detailIssue = detailItemId ? issues.find((i) => i.id === detailItemId) : undefined;
@@ -643,67 +867,526 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
     ? [
       ...(detailStoreTask?.comments || []),
       ...(issueComments[detailIssue.id] || []),
-    ].slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     : [];
   const pendingIssue = pendingTransition ? issues.find((i) => i.id === pendingTransition.itemId) : undefined;
-  // Assignee shown in the transition dialog: the store task's assignee when the
-  // issue is real, else the seed row's current member.
   const pendingIssueStoreTask = pendingIssue ? storeTaskById.get(pendingIssue.id) : undefined;
   const pendingIssueAssigneeId = pendingIssueStoreTask
     ? pendingIssueStoreTask.assigneeId
     : pendingIssue
       ? projectTeamMembers.find((u) => u.name === pendingIssue.assigneeName)?.id
       : undefined;
-  const visibleMembers = showAllMembers ? assignees : assignees.slice(0, 6);
-  return (<div className="flex-1 min-w-0 pt-1 flex flex-col">
-    <IterationHeader projectName={project.name} piNumber={activePiNumber} sprintName={activeSprint.name} startDate={activeSprint.startDate} endDate={activeSprint.endDate} status={activeSprint.status} issuesCount={issues.length} daysLeft={daysLeft} rightAction={<button onClick={() => navigate(`${basePath}/iteration-board`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white shadow-xs transition-colors cursor-pointer flex-shrink-0">
-      <LayoutGrid className="w-3.5 h-3.5" />
-      Iteration Board
-    </button>} />
 
-    <div className="flex-shrink-0 pb-3 flex items-center gap-2 flex-wrap">
-      <div role="group" aria-label="Quick filters" className="inline-flex items-center gap-0.5 bg-white border border-[#dfe1e6] rounded-lg p-0.5">
-        {FILTERS.map((f) => (<button key={f.id} data-filter={f.id} aria-pressed={activeFilter === f.id} onClick={() => pickFilter(f.id)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-colors cursor-pointer ${activeFilter === f.id
-          ? 'bg-[#deebff] text-[#0747a6]'
-          : 'text-[#42526e] hover:bg-[#f1f2f4]'}`}>
-          {f.label}
-        </button>))}
-      </div>
+  const renderSidebarCard = (s) => {
+    const sIssues = issuesBySprint[s.id] || [];
+    const total = sIssues.length;
+    const completed = sIssues.filter((i) => i.status === 'DONE' && !isCancelledWorkItem(i)).length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const isSelected = s.id === activeSprint?.id;
+    const isActiveStatus = s.status === 'ACTIVE';
+    const cardTitle = s.iterationNumber || s.name;
+    const accentColor = isActiveStatus ? 'bg-[#0d9488]' : s.status === 'COMPLETED' ? 'bg-[#059669]' : 'bg-[#94a3b8]';
+    const statusLabel = isActiveStatus ? 'Active' : s.status === 'COMPLETED' ? 'Completed' : 'Planned';
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {visibleMembers.map((a) => (<button key={a.name} data-member={a.name} aria-pressed={selectedAssignee === a.name} title={a.name} onClick={() => toggleMember(a.name)} className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full border text-[11px] font-bold transition-colors cursor-pointer ${selectedAssignee === a.name
-          ? 'bg-[#deebff] border-[#4c9aff] text-[#0747a6]'
-          : 'bg-white border-[#dfe1e6] text-[#42526e] hover:border-[#4c9aff]'}`}>
-          <span className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0" style={{ backgroundColor: a.color }}>
-            {a.avatarUrl ? (<img src={a.avatarUrl} alt={a.name} className="w-full h-full object-cover" />) : (a.initial)}
+    if (isSidebarCollapsed) {
+      const tooltipText = `${cardTitle} (${statusLabel})\n${formatDay(s.startDate)} – ${formatDay(s.endDate)}\n${completed} / ${total} work item${total === 1 ? '' : 's'} (${pct}%)`;
+      const dotColor = isActiveStatus ? 'bg-[#0d9488]' : s.status === 'COMPLETED' ? 'bg-[#059669]' : 'bg-[#94a3b8]';
+
+      return (
+        <div
+          key={s.id}
+          role="button"
+          tabIndex={0}
+          aria-current={isSelected}
+          aria-label={`${cardTitle} (${statusLabel})`}
+          title={tooltipText}
+          onClick={() => setSelectedSprintId(s.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setSelectedSprintId(s.id);
+            }
+          }}
+          className={`group relative rounded-lg border px-1.5 py-2 pl-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5 focus:outline-none focus:ring-2 focus:ring-[#0d9488]/40 ${
+            isSelected
+              ? 'border-[#0d9488] bg-[#f7faff] ring-1 ring-[#0d9488]/30 shadow-xs'
+              : isActiveStatus
+                ? 'border-[#99f6e4] bg-[#f0fdfa] hover:border-[#0d9488]'
+                : 'border-[#dfe1e6] bg-white hover:border-[#b3d4ff] hover:bg-[#fafbff]'
+          }`}
+        >
+          <span aria-hidden="true" className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${accentColor}`} />
+          <div className="flex items-center justify-center gap-1 w-full min-w-0">
+            <span
+              aria-hidden="true"
+              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor} ${
+                isActiveStatus ? 'ring-2 ring-[#0d9488]/25' : ''
+              }`}
+            />
+            <span
+              className={`text-xs font-bold tracking-tight truncate ${
+                isActiveStatus ? 'text-[#0f766e]' : 'text-[#172b4d]'
+              }`}
+            >
+              {cardTitle}
+            </span>
+          </div>
+          <span
+            className={`text-[9px] leading-tight font-semibold truncate max-w-full ${
+              isActiveStatus
+                ? 'text-[#0d9488]'
+                : s.status === 'COMPLETED'
+                  ? 'text-[#059669]'
+                  : 'text-[#6b778c]'
+            }`}
+          >
+            {statusLabel}
           </span>
-          {a.name.split(' ')[0]}
-        </button>))}
-        {assignees.length > 6 && (<button onClick={() => setShowAllMembers((v) => !v)} className="text-[11px] font-bold text-[#0052cc] hover:text-[#0747a6] px-1.5 py-1 cursor-pointer">
-          {showAllMembers ? 'Show less' : 'Show more'}
-        </button>)}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={s.id}
+        role="button"
+        tabIndex={0}
+        aria-current={isSelected}
+        onClick={() => setSelectedSprintId(s.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setSelectedSprintId(s.id);
+          }
+        }}
+        className={`group relative rounded-lg border px-2 py-1.5 pl-2.5 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#0d9488]/40 ${
+          isSelected
+            ? 'border-[#0d9488] bg-[#f7faff] ring-1 ring-[#0d9488]/30 shadow-xs'
+            : 'border-[#dfe1e6] bg-white hover:border-[#b3d4ff] hover:bg-[#fafbff]'
+        }`}
+      >
+        <span aria-hidden="true" className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${accentColor}`} />
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-bold text-[#172b4d] tracking-tight" title={cardTitle}>
+              {cardTitle}
+            </span>
+            <SprintStatusBadge status={s.status} />
+          </div>
+          <span className="p-0.5 -m-0.5 text-[#6b778c] flex-shrink-0">
+            {isSelected ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </span>
+        </div>
+
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] leading-tight text-[#6b778c]">
+          <Calendar className="w-3 h-3 text-[#9aa0a6] flex-shrink-0" />
+          <span className="whitespace-nowrap">
+            {formatDay(s.startDate)} - {formatDay(s.endDate)}
+          </span>
+        </div>
+
+        <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] leading-tight">
+          <span className="inline-flex items-center gap-1 text-[#42526e] font-medium min-w-0">
+            <ListTree className="w-3 h-3 text-[#9aa0a6] flex-shrink-0" />
+            <span className="tabular-nums">
+              {total} work item{total === 1 ? '' : 's'}
+            </span>
+          </span>
+        </div>
+
+        <div className="mt-0.5 flex items-center gap-2">
+          <ProgressBar value={pct} height="sm" animated={false} className="flex-1 min-w-0" />
+          <span className="text-[10px] leading-tight font-semibold text-[#6b778c] tabular-nums whitespace-nowrap flex-shrink-0">
+            {completed} / {total} · {pct}%
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  return (<div className="flex-1 min-w-0 pt-1 flex gap-3 items-start w-full">
+    {/* Left-side Iterations panel */}
+    <aside
+      aria-label="Iterations sidebar"
+      className={`flex-shrink-0 flex flex-col min-w-0 overflow-x-clip transition-[width] duration-[250ms] ease-in-out ${
+        isSidebarCollapsed ? 'w-[76px]' : 'w-[240px] lg:w-[250px]'
+      }`}
+    >
+      {isSidebarCollapsed ? (
+        <div className="flex items-center justify-center pb-1.5 mb-1">
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(false)}
+            className="inline-flex items-center justify-center w-full h-7 rounded-md border border-[#dfe1e6] bg-white text-[#42526e] hover:bg-[#f4f5f7] hover:text-[#172b4d] transition-colors cursor-pointer"
+            title="Expand iterations sidebar"
+            aria-label="Expand iterations sidebar"
+            aria-expanded={false}
+          >
+            <ChevronsRight className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between pb-1.5 mb-1 px-0.5 relative">
+          <h2 className="text-sm font-bold text-[#172b4d] truncate">Iterations</h2>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="relative" ref={piMenuRef}>
+              <button
+                type="button"
+                onClick={() => setPiFilterOpen((prev) => !prev)}
+                className={`inline-flex items-center justify-center h-6 px-1.5 rounded border text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedPiFilter !== null
+                    ? 'border-[#b3d4ff] bg-[#deebff] text-[#0052cc]'
+                    : 'border-[#dfe1e6] bg-white text-[#42526e] hover:bg-[#f4f5f7] hover:text-[#172b4d]'
+                }`}
+                title="Filter by Program Increment"
+                aria-haspopup="listbox"
+                aria-expanded={piFilterOpen}
+              >
+                <Filter className="w-3 h-3 flex-shrink-0" />
+                {selectedPiFilter !== null && <span className="ml-1">PI {selectedPiFilter}</span>}
+              </button>
+
+              {piFilterOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1 min-w-[9rem] bg-white rounded-lg border border-[#dfe1e6] shadow-lg py-1 z-50 animate-scale-in"
+                  role="listbox"
+                >
+                  <div className="px-3 py-1 text-[9px] font-black tracking-wider text-[#6b778c] border-b border-[#ebecf0] uppercase">
+                    Program Increment
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPiFilter(null);
+                      setPiFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between gap-2 hover:bg-[#f4f5f7] transition-colors cursor-pointer ${
+                      selectedPiFilter === null ? 'font-bold text-[#0052cc]' : 'text-[#42526e]'
+                    }`}
+                  >
+                    <span>All PIs</span>
+                    {selectedPiFilter === null && <Check className="w-3.5 h-3.5 text-[#0052cc]" />}
+                  </button>
+                  {projectPis.map((p) => {
+                    const isSelected = selectedPiFilter === p.number;
+                    const count = availableIterations.filter((s) => piNumberForSprint(s, pis) === p.number).length;
+                    return (
+                      <button
+                        key={p.number}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPiFilter(p.number);
+                          setPiFilterOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between gap-2 hover:bg-[#f4f5f7] transition-colors cursor-pointer ${
+                          isSelected ? 'font-bold text-[#0052cc]' : 'text-[#42526e]'
+                        }`}
+                      >
+                        <span>{p.label}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-[#9aa0a6] tabular-nums">{count}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#0052cc]" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPiFilterOpen(false);
+                setIsSidebarCollapsed(true);
+              }}
+              className="inline-flex items-center justify-center h-6 px-2 rounded border border-[#dfe1e6] bg-white text-xs font-semibold text-[#42526e] hover:bg-[#f4f5f7] hover:text-[#172b4d] transition-colors cursor-pointer whitespace-nowrap"
+              title="Collapse iterations sidebar"
+              aria-label="Collapse iterations sidebar"
+              aria-expanded={true}
+            >
+              <span>Collapse</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {filteredIterations.map(renderSidebarCard)}
+      </div>
+    </aside>
+
+    {/* Right-side Kanban View layout */}
+    <div className="flex-1 min-w-0 flex flex-col">
+      <IterationHeader projectName={project.name} piNumber={activePiNumber} sprintName={activeSprint.iterationNumber || activeSprint.name} startDate={activeSprint.startDate} endDate={activeSprint.endDate} status={activeSprint.status} issuesCount={issues.length} daysLeft={daysLeft} rightAction={<button onClick={() => navigate(`${basePath}/iteration-board`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white shadow-xs transition-colors cursor-pointer flex-shrink-0">
+        <LayoutGrid className="w-3.5 h-3.5" />
+        Iteration Board
+      </button>} />
+
+    {/* ROW 1 — Work Item Filters */}
+    <div className="flex-shrink-0 pb-2 flex items-center justify-between gap-2 flex-wrap">
+      <div
+        role="group"
+        aria-label="Work item filters"
+        className="inline-flex items-center gap-0.5 bg-white border border-[#dfe1e6] rounded-lg p-0.5 shadow-2xs"
+      >
+        {[
+          { id: 'my', label: 'Only My Work Items' },
+          { id: 'all', label: 'All Work Items' },
+          { id: 'recent', label: 'Recently Updated' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            data-filter={tab.id}
+            aria-pressed={activeFilter === tab.id}
+            onClick={() => setActiveFilter(tab.id)}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer select-none ${
+              activeFilter === tab.id
+                ? 'bg-[#deebff] text-[#0747a6]'
+                : 'text-[#42526e] hover:bg-[#f1f2f4]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {filteredIssues.length === 0 && (<div className="ml-auto flex items-center gap-2 text-xs text-[#6b778c]">
-        <span data-empty-filter className="font-bold text-[#6b778c]">
-          No work items match the current filter
+      {filteredIssues.length === 0 && (
+        <div className="flex items-center gap-2 text-xs text-[#6b778c]">
+          <span data-empty-filter className="font-semibold text-[#6b778c]">
+            No work items match the current filter
+          </span>
+        </div>
+      )}
+    </div>
+
+    {/* Quick Filters */}
+    <div className="flex-shrink-0 pb-3 flex items-center gap-1.5 flex-wrap min-h-[32px]">
+        <span className="text-xs font-bold text-[#42526e] mr-1 select-none whitespace-nowrap">
+          Quick Filters:
         </span>
-      </div>)}
+
+        {pinnedMembers.map((member, idx) => {
+          const isSelected = selectedMemberId === member.id;
+          const isDragging = draggedChipId === member.id;
+          const isDropTarget = dragOverChipId === member.id && draggedChipId && draggedChipId !== member.id;
+          return (
+            <div
+              key={member.id}
+              role="button"
+              tabIndex={0}
+              draggable
+              aria-pressed={isSelected}
+              title={`${member.name} · Priority #${idx + 1} (drag to reorder)`}
+              onClick={() => {
+                if (suppressChipClickRef.current) return;
+                handleToggleMemberFilter(member.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleToggleMemberFilter(member.id);
+                }
+              }}
+              onDragStart={(e) => {
+                e.stopPropagation();
+                suppressChipClickRef.current = true;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('application/x-quick-filter-member', member.id);
+                setDraggedChipId(member.id);
+              }}
+              onDragOver={(e) => {
+                if (!draggedChipId) return;
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverChipId !== member.id) setDragOverChipId(member.id);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget) && dragOverChipId === member.id) {
+                  setDragOverChipId(null);
+                }
+              }}
+              onDrop={(e) => {
+                if (!draggedChipId) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const sourceId = e.dataTransfer.getData('application/x-quick-filter-member') || draggedChipId;
+                reorderPinnedMembers(sourceId, member.id);
+                setDraggedChipId(null);
+                setDragOverChipId(null);
+                setTimeout(() => { suppressChipClickRef.current = false; }, 0);
+              }}
+              onDragEnd={() => {
+                setDraggedChipId(null);
+                setDragOverChipId(null);
+                setTimeout(() => { suppressChipClickRef.current = false; }, 0);
+              }}
+              className={`group inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full border text-xs font-semibold transition-all cursor-pointer select-none ${
+                isDragging
+                  ? 'opacity-45 border-[#4c9aff] bg-[#f0f7ff] cursor-grabbing'
+                  : isDropTarget
+                    ? 'border-[#0052cc] bg-[#e6f0ff] ring-2 ring-[#4c9aff]/40'
+                    : isSelected
+                      ? 'bg-[#deebff] border-[#0052cc] text-[#0052cc] shadow-xs'
+                      : 'bg-white border-[#dfe1e6] text-[#42526e] hover:border-[#4c9aff] hover:bg-[#f8f9fa]'
+              }`}
+            >
+              <MemberAvatar
+                src={member.avatarUrl}
+                alt={member.displayName}
+                initial={member.initial}
+                color={member.color}
+                sizeClass="w-4 h-4 text-[8px]"
+              />
+              <span>{member.displayName}</span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePin(member.id);
+                }}
+                title={`Unpin ${member.displayName}`}
+                aria-label={`Unpin ${member.displayName}`}
+                className={`w-4 h-4 rounded-full inline-flex items-center justify-center transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'text-[#0052cc]/80 hover:text-[#bf2600] hover:bg-[#ffebe6]'
+                    : 'text-[#8993a4] opacity-75 group-hover:opacity-100 hover:text-[#bf2600] hover:bg-[#ffebe6]'
+                }`}
+              >
+                <Pin className="w-2.5 h-2.5 rotate-45 fill-current" />
+              </button>
+            </div>
+          );
+        })}
+
+        <div className="relative" ref={addMenuRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setAddOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  setAddSearchQuery('');
+                  setSelectedAddIds([]);
+                }
+                return next;
+              });
+            }}
+            aria-expanded={addOpen}
+            aria-haspopup="dialog"
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed text-xs font-semibold transition-colors cursor-pointer select-none whitespace-nowrap ${
+              addOpen
+                ? 'border-[#0052cc] bg-[#deebff] text-[#0052cc]'
+                : 'border-[#c1c7d0] bg-white text-[#42526e] hover:border-[#0052cc] hover:text-[#0052cc] hover:bg-[#f0f7ff]'
+            }`}
+            title="Add employees to Quick Filters"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Add</span>
+          </button>
+
+          {addOpen && (
+            <div
+              role="dialog"
+              aria-label="Add employees to Quick Filters"
+              className="absolute left-0 top-full mt-1.5 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-[#dfe1e6] shadow-xl p-3 z-50 animate-scale-in"
+            >
+              <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#ebecf0]">
+                <span className="text-[11px] font-bold text-[#172b4d] uppercase tracking-wider">
+                  Add Employees
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(false)}
+                  className="p-0.5 rounded text-[#6b778c] hover:text-[#172b4d] hover:bg-[#f4f5f7] transition-colors cursor-pointer"
+                  aria-label="Close add employees"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="relative mb-2">
+                <Search className="w-3.5 h-3.5 text-[#6b778c] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={addSearchQuery}
+                  onChange={(e) => setAddSearchQuery(e.target.value)}
+                  placeholder="Search employees..."
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-white rounded-lg border border-[#dfe1e6] text-[#172b4d] placeholder-[#8590a2] focus:outline-none focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff] transition-colors"
+                  autoFocus
+                />
+              </div>
+
+              <div className="max-h-52 overflow-y-auto space-y-0.5 pr-0.5">
+                {unpinnedMembers.length === 0 ? (
+                  <div className="py-5 text-center text-xs text-[#8590a2]">
+                    {addSearchQuery.trim() ? 'No matching employees found' : 'All employees are already pinned'}
+                  </div>
+                ) : (
+                  unpinnedMembers.map((m) => {
+                    const checked = selectedAddIds.includes(m.id);
+                    const count = memberIssueCounts[m.id] ?? 0;
+                    return (
+                      <label
+                        key={m.id}
+                        className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors ${
+                          checked ? 'bg-[#f0f7ff]' : 'hover:bg-[#f4f5f7]'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleAddCandidate(m.id)}
+                          className="w-3.5 h-3.5 rounded border-[#c1c7d0] text-[#0052cc] focus:ring-[#4c9aff] cursor-pointer flex-shrink-0"
+                        />
+                        <MemberAvatar
+                          src={m.avatarUrl}
+                          alt={m.name}
+                          initial={m.initial}
+                          color={m.color}
+                        />
+                        <span className="text-xs font-semibold text-[#172b4d] truncate flex-1 min-w-0">
+                          {m.name}
+                        </span>
+                        <span className="text-[10px] text-[#6b778c] tabular-nums flex-shrink-0">
+                          {count}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="border-t border-[#ebecf0] pt-2.5 mt-2.5 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-[#6b778c]">
+                  {selectedAddIds.length > 0 ? `${selectedAddIds.length} selected` : 'Select to pin'}
+                </span>
+                <button
+                  type="button"
+                  disabled={selectedAddIds.length === 0}
+                  onClick={handleAddSelectedMembers}
+                  className="px-3 py-1 bg-[#0052cc] hover:bg-[#0747a6] disabled:bg-[#ebecf0] disabled:text-[#a5adba] disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md shadow-xs transition-colors cursor-pointer"
+                >
+                  Add Selected
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
     </div>
 
     <div data-board className="flex flex-col min-h-[calc(100vh_-_16rem)] overflow-x-auto pb-4">
-      <div className="flex-1 min-h-0 grid grid-cols-3 gap-2 min-w-[840px] items-stretch">
+      <div className="flex-1 min-h-0 grid grid-cols-3 gap-2 min-w-[600px] lg:min-w-0 items-stretch">
         {BOARD_COLUMNS.map((col) => {
           const items = columnItems[col];
           const over = dragOverStatus && dragOverStatus.column === col ? dragOverStatus : null;
           const isDone = col === 'DONE';
-          // At rest the DONE column is a plain single column. While a card is
-          // dragged validly over it, two compact drag-only drop targets (Cancelled
-          // / Done) are revealed — they never render outside the drag interaction.
+          // Show Cancelled / Done drop targets when a card is dragged over DONE.
           const showDoneTargets = isDone && !!draggedItem && !!over && over.valid;
-          // Cross-column drags switch DONE into an explicit "choose a destination"
-          // state (targets only, per design). Same-column drags keep the cards so
-          // reordering inside DONE still works.
           const hideDoneCards = showDoneTargets && !!draggedItem && draggedItem.column !== 'DONE';
           const bodyCls = isDone
             ? over && !over.valid
@@ -732,12 +1415,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
                 : hoverCardId === issue.id
                   ? 'border-[#4c9aff]'
                   : 'border-[#dfe1e6] hover:border-[#4c9aff]'}`}>
-              {/* The whole card opens the canonical issue-detail page
-                        (/member/tasks/{issue.key}) - the same page every other
-                        entry point uses. The key does the same thing (its click is
-                        stopped so it is never mistaken for a drag start), while
-                        the assignee avatar keeps the board's quick-view dialog
-                        reachable without leaving the sprint. */}
+              {/* Header: issue key and assignee avatar */}
               <div className="flex items-center justify-between gap-1.5 mb-1 min-w-0">
                 <span onClick={(e) => { e.stopPropagation(); openIssueDetailsPage(issue); }} className="text-[11px] font-bold text-[#0052cc] truncate min-w-0 cursor-pointer">
                   {issue.key}
@@ -754,15 +1432,13 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
               <div className="text-xs font-semibold text-[#1f1f1f] leading-snug line-clamp-2 mb-1" title={issue.title}>
                 {issue.title}
               </div>
-              {/* Epic / category as a compact colored label under the title. */}
+              {/* Epic label */}
               <div className="mb-1 min-w-0">
                 <span className={`inline-block max-w-full truncate text-[9px] font-bold px-1.5 py-0.5 rounded border ${issue.epicColor}`} title={issue.epicName}>
                   {issue.epicName}
                 </span>
               </div>
-              {/* Bottom row: existing metadata only, compacted into one row —
-                        priority dot, type badge, and story points. No separate
-                        large row for the issue type. */}
+              {/* Priority, type, and story points */}
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getPriorityDotColor(issue.priority)}`} title={`Priority: ${issue.priority.charAt(0) + issue.priority.slice(1).toLowerCase()}`} />
                 {TYPE_BADGE[issue.type] && (<span className={`text-[9px] font-bold px-1 rounded flex-shrink-0 ${TYPE_BADGE[issue.type].className}`} title={typeLabel(issue.type)}>
@@ -795,8 +1471,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
                 </div>
               )}
               <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col gap-2 px-2.5 py-2">
-                {/* Drag-only drop targets: visible exclusively while a card is
-                    dragged validly over DONE, gone the moment the drag ends. */}
+                {/* Drag-only drop targets: Cancelled / Done */}
                 {showDoneTargets && (<div className="flex-1 min-h-0 flex flex-col gap-2">
                   {['CANCELLED', 'DONE'].map((zone) => (<div key={zone} data-done-zone={zone} onDragOver={(e) => handleDoneZoneDragOver(zone, e)} onDrop={(e) => handleDoneZoneDrop(zone, e)} className={`flex-1 min-h-[72px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-3 py-3 text-center transition-colors ${doneZone === zone
                     ? zone === 'CANCELLED'
@@ -824,6 +1499,7 @@ export const ActiveSprintPage = ({ project, sprintId, sprint }) => {
           </section>);
         })}
       </div>
+    </div>
     </div>
 
     {showCommentModal && pendingTransition && pendingIssue && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#091e42]/45" data-comment-modal onClick={resetPending}>

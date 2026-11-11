@@ -29,15 +29,23 @@ import { ProjectAssetVaultTab } from './assets/ProjectAssetVaultTab';
 import { IterationsOverviewTab } from './IterationsOverviewTab';
 import { BacklogOverviewTab } from './BacklogOverviewTab';
 import { ProductIncrementsTab } from './ProductIncrementsTab';
+import { WorkloadCapacityTab } from './WorkloadCapacityTab';
 import { TrialLockedPanel } from '../trial/TrialLockedPanel';
 import { isTrialUser, TRIAL_LOCKED_PROJECT_TABS } from '../../utils/trialAccess';
 const PI_TAB_ID = 'product-increments';
-/** Inserts the PI tab right after Iterations (or at the end) when absent. */
+const WORKLOAD_TAB_ID = 'workload';
+/** Inserts the PI tab and Workload tab right after Iterations when absent. */
 const withPiTab = (ids) => {
-    if (ids.includes(PI_TAB_ID))
-        return ids;
-    const at = ids.indexOf('iterations');
-    return at >= 0 ? [...ids.slice(0, at + 1), PI_TAB_ID, ...ids.slice(at + 1)] : [...ids, PI_TAB_ID];
+    let res = ids;
+    if (!res.includes(PI_TAB_ID)) {
+        const at = res.indexOf('iterations');
+        res = at >= 0 ? [...res.slice(0, at + 1), PI_TAB_ID, ...res.slice(at + 1)] : [...res, PI_TAB_ID];
+    }
+    if (!res.includes(WORKLOAD_TAB_ID)) {
+        const at = res.indexOf('iterations');
+        res = at >= 0 ? [...res.slice(0, at + 1), WORKLOAD_TAB_ID, ...res.slice(at + 1)] : [...res, WORKLOAD_TAB_ID];
+    }
+    return res;
 };
 const DEFAULT_TABS_CONFIG = [
     { id: 'command-center', defaultLabel: 'Command Center', icon: LayoutDashboard, category: 'core' },
@@ -46,6 +54,7 @@ const DEFAULT_TABS_CONFIG = [
     { id: 'iterations', defaultLabel: 'Iterations', icon: CalendarRange, category: 'planning' },
     // Project-level home for PIs (Create PI lives here, not on the Iterations page).
     { id: 'product-increments', defaultLabel: 'Program Increments', icon: ListTree, category: 'planning' },
+    { id: 'workload', defaultLabel: 'Workload & Capacity', icon: Users, category: 'planning' },
     { id: 'iterations-overview', defaultLabel: 'Iterations Overview', icon: Layers, category: 'planning' },
     { id: 'backlog-overview', defaultLabel: 'Work Queue Overview', icon: ListTodo, category: 'planning' },
     { id: 'execution-board', defaultLabel: 'Execution Board', icon: Columns, category: 'execution' },
@@ -1390,6 +1399,7 @@ export const ProjectWorkspace = () => {
         {activeTab === PI_TAB_ID && (<ProductIncrementsTab projectId={project.id} onOpenIterations={(piId) => {
                 navigate(`/pi-iterations/${encodeURIComponent(piId)}`);
             }}/>)}
+        {activeTab === WORKLOAD_TAB_ID && (<WorkloadCapacityTab projectId={project.id}/>)}
         {activeTab === 'iterations-overview' && (<IterationsOverviewTab projectId={project.id}/>)}
         {activeTab === 'backlog-overview' && (<BacklogOverviewTab projectId={project.id}/>)}
         {activeTab === 'execution-board' && (<KanbanBoard projectId={project.id}/>)}

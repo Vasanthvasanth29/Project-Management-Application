@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { ListTree, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
+import { usePlanStore } from '../../store/planStore';
 import { nextPiNumber, sortProjectPis, validatePiForm } from '../../utils/programIncrement';
 const newRequestId = () => `pireq-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 /**
@@ -17,6 +18,8 @@ const newRequestId = () => `pireq-${Date.now()}-${Math.random().toString(36).sli
 export const CreatePIModal = ({ projectId, isOpen, onClose, onCreated }) => {
     const { pis, projects, createProgramIncrement } = useAppStore();
     const currentUser = useAuthStore((s) => s.currentUser);
+    const currentPlan = usePlanStore((s) => s.currentPlan);
+    const isTrial = currentPlan === 'TRIAL';
     const project = projects.find((p) => p.id === projectId);
     const projectPis = useMemo(() => sortProjectPis(pis, projectId), [pis, projectId]);
     const nextNumber = nextPiNumber(projectPis);
@@ -52,6 +55,11 @@ export const CreatePIModal = ({ projectId, isOpen, onClose, onCreated }) => {
         e.preventDefault();
         if (submitting)
             return;
+        if (isTrial && projectPis.length >= 2) {
+            setErrors({ limit: 'Maximum 2 Product Increments (PIs) allowed on Free Trial pack. Upgrade to Pro for unlimited PIs.' });
+            toast.error('Free Trial limit reached: Maximum 2 PIs allowed.');
+            return;
+        }
         const errs = validatePiForm({ number, startDate, endDate, projectPis });
         setErrors(errs);
         if (Object.keys(errs).length > 0)

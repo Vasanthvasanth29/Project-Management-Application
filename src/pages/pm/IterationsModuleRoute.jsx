@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Navigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import { matchProject, matchId } from '../../utils/idUtils';
 import { IterationModuleLayout } from './IterationModuleLayout';
@@ -8,11 +8,10 @@ import { ActiveSprintPage } from './ActiveSprintPage';
 import { IterationReportsPage } from './IterationReportsPage';
 import { SprintManager } from './SprintManager';
 // Route element for every `.../iterations/*` pattern: resolves the project, picks
-// the sub-view from the URL tail (default | completed | live-iteration |
+// the sub-view from the URL tail (default | completed | kanban-view |
 // iteration-board | reports | specific sprint) and wraps it in the module layout (breadcrumb header
-// + primary nav). The legacy `active-sprint` tail still resolves to the Live
-// Iteration page and the legacy `?view=board` query still lands on the Iteration
-// Board, so old links keep working.
+// + primary nav). The legacy `live-iteration` and `active-sprint` tails redirect
+// to `kanban-view` so bookmarks and links keep working.
 export const IterationsModuleRoute = () => {
     const { projectId, projectKey, projectName } = useParams();
     const location = useLocation();
@@ -22,7 +21,7 @@ export const IterationsModuleRoute = () => {
         if (!project)
             return undefined;
         const seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
-        if (!seg || ['reports', 'completed', 'live-iteration', 'active-sprint', 'iteration-board', 'iterations'].includes(seg)) {
+        if (!seg || ['reports', 'completed', 'kanban-view', 'live-iteration', 'active-sprint', 'iteration-board', 'iterations'].includes(seg)) {
             return undefined;
         }
         return sprints.find((s) => matchId(s.projectId, project.id) && (matchId(s.id, seg) || s.iterationNumber === seg || s.name === seg));
@@ -34,7 +33,9 @@ export const IterationsModuleRoute = () => {
         if (seg === 'completed')
             return 'completed';
         if (seg === 'live-iteration' || seg === 'active-sprint')
-            return 'live-iteration';
+            return 'redirect-kanban';
+        if (seg === 'kanban-view')
+            return 'kanban-view';
         if (seg === 'iteration-board')
             return 'iteration-board';
         return 'default';
@@ -44,8 +45,11 @@ export const IterationsModuleRoute = () => {
         <p className="text-sm text-[#747775]">Project not found.</p>
       </div>);
     }
+    if (sub === 'redirect-kanban') {
+        return <Navigate to={location.pathname.replace(/\/(live-iteration|active-sprint)$/, '/kanban-view') + location.search} replace />;
+    }
     return (<IterationModuleLayout project={project}>
-      {matchedSprint ? (<ActiveSprintPage project={project} sprint={matchedSprint}/>) : sub === 'live-iteration' ? (<ActiveSprintPage project={project}/>) : sub === 'reports' ? (<IterationReportsPage project={project}/>) : sub === 'iteration-board' ? (<IterationBoardView projectId={project.id}/>) : sub === 'completed' ? (<IterationsPage view="completed"/>) : (<IterationsPage />)}
+      {matchedSprint ? (<ActiveSprintPage project={project} sprint={matchedSprint}/>) : sub === 'kanban-view' ? (<ActiveSprintPage project={project}/>) : sub === 'reports' ? (<IterationReportsPage project={project}/>) : sub === 'iteration-board' ? (<IterationBoardView projectId={project.id}/>) : sub === 'completed' ? (<IterationsPage view="completed"/>) : (<IterationsPage />)}
     </IterationModuleLayout>);
 };
 // The Iteration Board content itself (same board the old `?view=board` switcher

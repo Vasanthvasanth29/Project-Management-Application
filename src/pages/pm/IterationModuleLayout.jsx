@@ -18,8 +18,8 @@ export const resolveIterationNavId = (pathname) => {
     const p = pathname.replace(/\/+$/, '');
     if (p.endsWith('/completed'))
         return 'completed';
-    if (p.endsWith('/live-iteration') || p.endsWith('/active-sprint'))
-        return 'live-iteration';
+    if (p.endsWith('/kanban-view') || p.endsWith('/live-iteration') || p.endsWith('/active-sprint'))
+        return 'kanban-view';
     if (p.endsWith('/iteration-board'))
         return 'iteration-board';
     if (p.endsWith('/reports'))
@@ -37,12 +37,12 @@ export const useIterationPaths = () => {
 // buttons and no duplicated state.
 export const IterationHeaderActionsContext = React.createContext(null);
 // Navigation destinations — the module tab row in the required header order:
-// Iterations | Live Iteration | Reports | Completed Iterations. Every
-// destination is a real routed view (`.../iterations`, `/live-iteration`,
+// Iterations | Kanban View | Reports | Completed Iterations. Every
+// destination is a real routed view (`.../iterations`, `/kanban-view`,
 // `/reports`, `/completed`). Board was removed from the header entirely.
 const buildIterationNavItems = (basePath) => [
     { id: 'iterations', label: 'Iterations', icon: Layers, to: basePath },
-    { id: 'live-iteration', label: 'Live Iteration', icon: LayoutDashboard, to: `${basePath}/live-iteration` },
+    { id: 'kanban-view', label: 'Kanban View', icon: LayoutDashboard, to: `${basePath}/kanban-view` },
     { id: 'reports', label: 'Reports', icon: BarChart3, to: `${basePath}/reports` },
     { id: 'completed', label: 'Completed Iterations', icon: History, to: `${basePath}/completed` },
 ];

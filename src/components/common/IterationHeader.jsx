@@ -41,19 +41,27 @@ export const IterationHeader = ({ projectName, piNumber, sprintName, startDate, 
         {piNumber !== undefined && (<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0">
             PI {piNumber}
           </span>)}
-        <h2 className="text-base font-bold text-[#1f1f1f] truncate min-w-0 inline-flex items-center">
+        <h2 className="text-base font-bold text-[#0052cc] truncate min-w-0 inline-flex items-center leading-none">
           {sprintName}
-          {formattedRange && formattedRange !== '—' && (<span className="ml-1.5 text-[13px] font-semibold text-[#42526e]">
-              [{formattedRange}]
-            </span>)}
         </h2>
-        <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md shadow-2xs flex-shrink-0 ${badgeClass}`}>
-          {getSprintStatusLabel(displayStatus)}
+        {formattedRange && formattedRange !== '—' && (
+          <>
+            <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#42526e] whitespace-nowrap flex-shrink-0 leading-none">
+              <CalendarDays className="w-3.5 h-3.5 text-[#6b778c] flex-shrink-0" />
+              <span>{formattedRange}</span>
+            </div>
+          </>
+        )}
+        <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
+        <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md shadow-2xs flex-shrink-0 inline-flex items-center ${badgeClass}`}>
+          <span>{getSprintStatusLabel(displayStatus)}</span>
         </span>
+        <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
         <span className="text-xs font-semibold text-[#6b778c] flex-shrink-0">
           {issuesCount} issue{issuesCount === 1 ? '' : 's'}
         </span>
-        <span className="text-[#d0d1d4] flex-shrink-0">|</span>
+        <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b778c] flex-shrink-0">
           <CalendarDays className="w-3.5 h-3.5"/>
           {daysLeft} day{daysLeft === 1 ? '' : 's'} left

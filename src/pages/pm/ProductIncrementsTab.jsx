@@ -11,6 +11,8 @@ import { canCreateIterationInPi, compareIterationNumbers, formatIsoDay, piStatus
 import { usePiPlan } from '../../data/piSprintStructure';
 import { CreatePIModal } from './CreatePIModal';
 import { CreateIterationModal } from './CreateIterationModal';
+import { usePlanStore } from '../../store/planStore';
+import { UpgradeModal } from '../../components/trial/UpgradeModal';
 // Timezone-free "07 Jan 2030" from the ISO date parts.
 const formatDay = formatIsoDay;
 /**
@@ -28,8 +30,12 @@ const formatDay = formatIsoDay;
 export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
     const { pis, sprints: allSprints, tasks } = useAppStore();
     const currentUser = useAuthStore((s) => s.currentUser);
-    const canCreate = canManageSprint(currentUser?.role);
+    const currentPlan = usePlanStore((s) => s.currentPlan);
+    const isTrial = currentPlan === 'TRIAL';
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const projectPis = useMemo(() => sortProjectPis(pis, projectId), [pis, projectId]);
+    const isTrialLimitReached = isTrial && projectPis.length >= 2;
+    const canCreate = isTrial || canManageSprint(currentUser?.role);
     const piPlan = usePiPlan(projectId);
     const [showCreate, setShowCreate] = useState(false);
     // PI whose Create Iteration form is open (null = closed).
@@ -121,10 +127,23 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
             </p>
           </div>
         </div>
-        {canCreate && (<button type="button" onClick={() => setShowCreate(true)} className="btn-primary btn-sm" data-testid="project-create-pi">
+        {canCreate && (<button type="button" onClick={() => {
+            if (isTrialLimitReached) {
+                setUpgradeModalOpen(true);
+                return;
+            }
+            setShowCreate(true);
+        }} className="btn-primary btn-sm" data-testid="project-create-pi">
             <Plus className="w-3.5 h-3.5"/> Create PI
           </button>)}
       </div>
+
+      {isTrial && isTrialLimitReached && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
+          <span>Free Trial limit reached: Maximum 2 Product Increments allowed on the Free Trial pack.</span>
+          <button onClick={() => setUpgradeModalOpen(true)} className="font-bold underline text-teal-700 hover:text-teal-900 ml-2">Upgrade to Pro</button>
+        </div>
+      )}
 
       {rows.length === 0 ? (<div className="card">
           <EmptyState icon={ListTree} title="No Program Increments yet" description={canCreate
@@ -273,5 +292,6 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
             setExpanded((prev) => new Set(prev).add(piId));
             setHighlightId(piId);
         }}/>
+      <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
     </div>);
 };

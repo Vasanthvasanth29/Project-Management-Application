@@ -4,6 +4,7 @@ import { users, organization, demoCredentials } from '../data/mockData';
 import { useAppStore } from './appStore';
 import { useSSOStore } from './ssoStore';
 import { createTrialSubscription } from '../utils/trialAccess';
+import { usePlanStore } from './planStore';
 export const useAuthStore = create()(persist((set, get) => ({
     currentUser: null,
     isAuthenticated: false,
@@ -31,6 +32,11 @@ export const useAuthStore = create()(persist((set, get) => ({
                 return { success: false };
             }
             const authUser = { ...appUser, authProvider: appUser.authProvider || 'PASSWORD', organization };
+            if (authUser.email?.toLowerCase().includes('trial') || authUser.role === 'MEMBER' && usePlanStore.getState().currentPlan === 'TRIAL') {
+                usePlanStore.getState().setPlan('TRIAL');
+            } else {
+                usePlanStore.getState().setPlan('PRO');
+            }
             set({ currentUser: authUser, isAuthenticated: true, isLoading: false, error: null });
             return { success: true, role: authUser.role };
         }
@@ -44,8 +50,28 @@ export const useAuthStore = create()(persist((set, get) => ({
                 return { success: false };
             }
             const authUser = { ...user, authProvider: user.authProvider || 'PASSWORD', organization };
+            usePlanStore.getState().setPlan(emailLower.includes('trial') ? 'TRIAL' : 'PRO');
             set({ currentUser: authUser, isAuthenticated: true, isLoading: false, error: null });
             return { success: true, role: user.role };
+        }
+        // 3. Built-in instant free trial demo login
+        if (emailLower === 'trial@demo.com' && credentials.password === 'Trial@123') {
+            const trialDemoUser = {
+                id: 'u-trial-01',
+                organizationId: organization.id,
+                employeeId: 'TRL0001',
+                name: 'Alex Taylor',
+                email: 'trial@demo.com',
+                role: 'MEMBER',
+                status: 'ACTIVE',
+                avatarColor: '#0d9488',
+                jobTitle: 'Trial Explorer',
+                authProvider: 'PASSWORD',
+                organization,
+            };
+            usePlanStore.getState().setPlan('TRIAL');
+            set({ currentUser: trialDemoUser, isAuthenticated: true, isLoading: false, error: null });
+            return { success: true, role: trialDemoUser.role };
         }
         set({ isLoading: false, error: 'Invalid email or password.' });
         return { success: false };
@@ -91,6 +117,7 @@ export const useAuthStore = create()(persist((set, get) => ({
                 ssoExternalId: claim.id,
                 organization,
             };
+            usePlanStore.getState().setPlan(emailLower.includes('trial') ? 'TRIAL' : 'PRO');
             set({ currentUser: authUser, isAuthenticated: true, isLoading: false, error: null });
             return { success: true, role: authUser.role, isNewUser: false };
         }
@@ -123,6 +150,7 @@ export const useAuthStore = create()(persist((set, get) => ({
                     createdAt: new Date().toISOString(),
                 });
                 const authUser = { ...updatedUser, organization };
+                usePlanStore.getState().setPlan(emailLower.includes('trial') ? 'TRIAL' : 'PRO');
                 set({ currentUser: authUser, isAuthenticated: true, isLoading: false, error: null });
                 return { success: true, role: user.role, isNewUser: false };
             }
@@ -174,6 +202,7 @@ export const useAuthStore = create()(persist((set, get) => ({
             createdAt: new Date().toISOString(),
         });
         const authUser = { ...newUser, organization };
+        usePlanStore.getState().setPlan(emailLower.includes('trial') ? 'TRIAL' : 'PRO');
         set({ currentUser: authUser, isAuthenticated: true, isLoading: false, error: null });
         return { success: true, role: newUser.role, isNewUser: true };
     },

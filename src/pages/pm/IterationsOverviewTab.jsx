@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp,ChevronsDown, ListTodo } from 'lucide-react';
+import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp,ChevronsDown, ListTodo, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -250,6 +250,7 @@ const collapseAllSprints = () => {
     const [recentlyUpdatedOnly, setRecentlyUpdatedOnly] = useState(false);
     const [showFewer, setShowFewer] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isAssigneesExpanded, setIsAssigneesExpanded] = useState(false);
     // Modals & Popovers
     const [showLinkedPagesModal, setShowLinkedPagesModal] = useState(false);
     const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
@@ -331,7 +332,12 @@ const collapseAllSprints = () => {
             }
             // Quick filter: Person
             if (activePersonFilters.length > 0) {
-                if (!activePersonFilters.includes(issue.assigneeName)) {
+                const matches = activePersonFilters.some((filterName) => {
+                    const fn = (filterName || '').toLowerCase();
+                    const an = (issue.assigneeName || '').toLowerCase();
+                    return fn === an || fn.startsWith(an) || an.startsWith(fn);
+                });
+                if (!matches) {
                     return false;
                 }
             }
@@ -393,8 +399,28 @@ const collapseAllSprints = () => {
         }
         return projectTeamMembers;
     };
+    const isPersonActive = (name) => {
+        const n = (name || '').toLowerCase();
+        return activePersonFilters.some((f) => {
+            const fn = (f || '').toLowerCase();
+            return fn === n || fn.startsWith(n) || n.startsWith(fn);
+        });
+    };
     const togglePersonFilter = (name) => {
-        setActivePersonFilters((prev) => prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name]);
+        setActivePersonFilters((prev) => {
+            const n = (name || '').toLowerCase();
+            const exists = prev.some((p) => {
+                const pn = (p || '').toLowerCase();
+                return pn === n || pn.startsWith(n) || n.startsWith(pn);
+            });
+            if (exists) {
+                return prev.filter((p) => {
+                    const pn = (p || '').toLowerCase();
+                    return !(pn === n || pn.startsWith(n) || n.startsWith(pn));
+                });
+            }
+            return [...prev, name];
+        });
     };
     const clearAllFilters = () => {
         setActivePersonFilters([]);
@@ -869,6 +895,30 @@ const collapseAllSprints = () => {
     // actions and status interactions are identical in both modes.
     const workQueueIssues = useMemo(() => [...(localIssuesBySprint[WORK_QUEUE_SELECTION_ID] || []), ...workQueuePool.map(toIterationIssue)], [localIssuesBySprint, workQueuePool]);
     const currentIssues = isWorkQueueSelected ? workQueueIssues : getIssuesForSprint(currentSprint.id);
+    const uniqueIterationAssignees = useMemo(() => {
+        const canonicalOrder = [
+            { name: 'Rahul', initial: 'R', avatarColor: '#2563eb' },
+            { name: 'Priya', initial: 'P', avatarColor: '#7c3aed' },
+            { name: 'Suresh', initial: 'S', avatarColor: '#0284c7' },
+            { name: 'Deepika', initial: 'D', avatarColor: '#be185d' },
+            { name: 'Kartik', initial: 'K', avatarColor: '#0f766e' },
+            { name: 'Nisha', initial: 'N', avatarColor: '#d97706' },
+        ];
+        return canonicalOrder.map((c) => {
+            const found = currentIssues.find((issue) => {
+                const first = (issue.assigneeName || '').split(' ')[0].toLowerCase();
+                return first === c.name.toLowerCase();
+            });
+            if (found) {
+                return {
+                    ...c,
+                    avatarColor: found.assigneeAvatarColor || c.avatarColor,
+                    initial: found.assigneeInitial || c.initial,
+                };
+            }
+            return c;
+        });
+    }, [currentIssues]);
     const storeTaskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
     const workItemFilterOptions = useMemo(() => {
         const components = new Set();
@@ -1853,20 +1903,24 @@ const collapseAllSprints = () => {
                       <span>Create work item</span>
                     </button>
                   </div>
-                </div>) : (<div className={`px-3 py-1 min-h-[38px] flex items-center gap-x-2 gap-y-1 flex-wrap ${currentOpen ? 'border-b border-[#ebecf0]' : ''}`} data-iteration-summary data-iteration-compact-header>
-                <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
-                    {currentPiNumber !== undefined && (<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0">
+                </div>) : (<div className={`px-3 py-1.5 min-h-[42px] flex items-center justify-between gap-x-3 gap-y-1.5 flex-wrap ${currentOpen ? 'border-b border-[#ebecf0]' : ''}`} data-iteration-summary data-iteration-compact-header>
+                <div className="min-w-0 flex items-center gap-2.5 flex-wrap">
+                    {currentPiNumber !== undefined && (<span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0 shadow-2xs">
                         PI {currentPiNumber}
                       </span>)}
-                    <h2 className="text-xl font-bold text-[#172b4d] tracking-tight whitespace-nowrap" title={getSprintIdentifier(currentSprint)}>
+                    <h2 className="text-lg font-bold text-[#0052cc] tracking-tight whitespace-nowrap leading-none flex-shrink-0" title={getSprintIdentifier(currentSprint)}>
                       {currentSprint.iterationNumber || getSprintIdentifier(currentSprint)}
-                      {currentSprint.startDate && currentSprint.endDate && (<span className="ml-1.5 text-[13px] font-semibold text-[#42526e]">
-                          [{fmtIterationRange(currentSprint.startDate, currentSprint.endDate)}]
-                        </span>)}
                     </h2>
 
+                    <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
+
+                    {currentSprint.startDate && currentSprint.endDate && (<div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#42526e] whitespace-nowrap flex-shrink-0 leading-none">
+                        <CalendarDays className="w-3.5 h-3.5 text-[#6b778c] flex-shrink-0"/>
+                        <span>{fmtIterationRange(currentSprint.startDate, currentSprint.endDate)}</span>
+                      </div>)}
+
                     {/* Status switcher (same permission-gated flow as before) */}
-                    {(currentSprint.status === 'ACTIVE' || currentSprint.status === 'COMPLETED' || currentSprint.status === 'PLANNED') && (<div className="relative">
+                    {(currentSprint.status === 'ACTIVE' || currentSprint.status === 'COMPLETED' || currentSprint.status === 'PLANNED') && (<div className="relative flex-shrink-0">
                         {canManage ? (<button type="button" onClick={() => {
                             closeAllRowUi();
                             setStatusDropdownSprintId(statusMenuOpen ? null : currentSprint.id);
@@ -1905,42 +1959,33 @@ const collapseAllSprints = () => {
                           </div>)}
                       </div>)}
 
-                    <span className="inline-flex items-center gap-1 tabular-nums whitespace-nowrap text-[11px] text-[#6b778c] font-medium" title={`${currentFlagged} flagged work item(s)`}>
-                      <Flag className="w-3 h-3 fill-[#0052cc] text-[#0052cc]"/>
-                      {currentFlagged} flagged
+                    <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
+
+                    <span className="inline-flex items-center gap-1 tabular-nums whitespace-nowrap text-[11px] text-[#6b778c] font-medium flex-shrink-0 leading-none" title={`${currentFlagged} flagged work item(s)`}>
+                      <Flag className="w-3 h-3 fill-[#0052cc] text-[#0052cc] flex-shrink-0"/>
+                      <span>{currentFlagged} flagged</span>
                     </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b778c] whitespace-nowrap">
-                      <CalendarDays className="w-3.5 h-3.5"/>
-                      {currentDaysLeft} day{currentDaysLeft === 1 ? '' : 's'} left
+
+                    <span className="text-[#dfe1e6] font-light flex-shrink-0 select-none">|</span>
+
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b778c] whitespace-nowrap flex-shrink-0 leading-none">
+                      <CalendarDays className="w-3.5 h-3.5 flex-shrink-0"/>
+                      <span>{currentDaysLeft} day{currentDaysLeft === 1 ? '' : 's'} left</span>
                     </span>
-                    <button type="button" onClick={() => navigate(`/pm/issues/search?sprint=${toUrlId(currentSprint.id)}`)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0052cc] hover:underline cursor-pointer whitespace-nowrap" title="Search work items in this iteration">
-                      <ListTree className="w-3 h-3"/>
-                      Search work items
+
+                    <button type="button" onClick={() => navigate(`/pm/issues/search?sprint=${toUrlId(currentSprint.id)}`)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0052cc] hover:underline cursor-pointer whitespace-nowrap flex-shrink-0 ml-1 leading-none" title="Search work items in this iteration">
+                      <ListTree className="w-3 h-3 flex-shrink-0"/>
+                      <span>Search work items</span>
                     </button>
                 </div>
 
-                {/* Right side of the summary row — work-item count, Create
-                    action, and the ⋯ overflow menu (Start/Complete/Edit/
+                {/* Right side of the summary row — ⋯ overflow menu (Start/Complete/Edit/
                     View Work Items/View all assignees/Iteration Details/
                     Linked Pages/Archive/Delete). The assignees popover is
                     anchored to this container and opens from the "View all
                     assignees" menu item. */}
                 <div className="ml-auto flex-shrink-0">
                   <div className="flex items-center gap-2">
-                    {currentOpen && (<>
-                        <span className="text-[11px] text-[#6b778c] tabular-nums whitespace-nowrap">
-                          {filteredIssues.length} of {currentIssues.length} work items
-                        </span>
-                        <button type="button" onClick={() => {
-                        setIssueTargetSprintId(isWorkQueueSelected ? WORK_QUEUE_SELECTION_ID : currentSprint.id);
-                        if (!isWorkQueueSelected)
-                            setSelectedSprintId(currentSprint.id);
-                        setShowCreateIssueModal(true);
-                    }} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-bold bg-[#0052cc] hover:bg-[#0747a6] text-white transition-colors shadow-xs cursor-pointer whitespace-nowrap">
-                          <Plus className="w-3.5 h-3.5"/>
-                          <span>Create</span>
-                        </button>
-                      </>)}
                     <div className="relative">
                       <button type="button" onClick={() => {
                     const next = !rowMenuOpen;
@@ -2051,45 +2096,93 @@ const collapseAllSprints = () => {
               </div>)}
 
               {/* Filter row — row 2 of the unified summary card (hidden while collapsed) */}
-              {currentOpen && (<div className="px-3 py-1 flex items-center gap-1.5 flex-wrap">
-                  <div className="relative flex-1 min-w-[130px] max-w-[208px]">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b778c]"/>
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search work items..." aria-label="Search work items" className="w-full pl-8 pr-7 py-1 text-xs bg-white border border-[#dfe1e6] rounded-md focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff] outline-none transition-all placeholder:text-[#9aa0a6]"/>
+              {currentOpen && (<div className="px-3 py-1 flex items-center gap-2 flex-wrap">
+                  <div className="relative flex-shrink-0 w-[155px]">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b778c] pointer-events-none"/>
+                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search work items..." aria-label="Search work items" className="w-full h-7 pl-7 pr-6 text-xs bg-white border border-[#dfe1e6] rounded-md focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff] outline-none transition-all placeholder:text-[#9aa0a6]"/>
                     {searchQuery && (<button type="button" onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9aa0a6] hover:text-[#42526e] cursor-pointer" aria-label="Clear work item search">
                         <X className="w-3 h-3"/>
                       </button>)}
                   </div>
 
-                  {/* Assignee (existing person quick filters) */}
-                  <div className="relative">
-                    <button type="button" onClick={() => setAssigneeFilterOpen(!assigneeFilterOpen)} className={filterBtnClass(activePersonFilters.length > 0)} aria-haspopup="listbox" aria-expanded={assigneeFilterOpen}>
-                      <Users className="w-3.5 h-3.5"/>
-                      <span>Assignee{activePersonFilters.length > 0 ? ` (${activePersonFilters.length})` : ''}</span>
-                      <ChevronDown className="w-3 h-3 text-[#6b778c]"/>
-                    </button>
-                    {assigneeFilterOpen && (<div className={filterMenuClass} role="listbox">
-                        <div className="px-3 py-1 text-[9px] font-black tracking-wider text-[#6b778c] border-b border-[#ebecf0]">
-                          Assignee
-                        </div>
-                        <button type="button" onClick={() => {
-                        setActivePersonFilters([]);
-                        setAssigneeFilterOpen(false);
-                    }} className={menuItemClass(activePersonFilters.length === 0)}>
-                          <span>Anyone</span>
-                          {activePersonFilters.length === 0 && <Check className="w-3.5 h-3.5 text-[#0052cc]"/>}
+                  <span className="text-[#dfe1e6] select-none text-xs font-light flex-shrink-0" aria-hidden="true">|</span>
+
+                  {/* Assignee (compact avatar display with label) */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="relative">
+                      <button type="button" onClick={() => setAssigneeFilterOpen(!assigneeFilterOpen)} className={`inline-flex items-center gap-1 h-7 px-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${activePersonFilters.length > 0 ? 'text-[#0052cc] bg-[#deebff] font-bold' : 'text-[#42526e] hover:text-[#172b4d] hover:bg-[#f4f5f7]'}`} aria-haspopup="listbox" aria-expanded={assigneeFilterOpen} title="Assignees">
+                        <Users className="w-3.5 h-3.5 text-[#6b778c]"/>
+                        <span>Assignee{activePersonFilters.length > 0 ? ` (${activePersonFilters.length})` : ''}</span>
+                      </button>
+                      {assigneeFilterOpen && (<div className={filterMenuClass} role="listbox">
+                          <div className="px-3 py-1 text-[9px] font-black tracking-wider text-[#6b778c] border-b border-[#ebecf0]">
+                            Assignee
+                          </div>
+                          <button type="button" onClick={() => {
+                          setActivePersonFilters([]);
+                          setAssigneeFilterOpen(false);
+                      }} className={menuItemClass(activePersonFilters.length === 0)}>
+                            <span>Anyone</span>
+                            {activePersonFilters.length === 0 && <Check className="w-3.5 h-3.5 text-[#0052cc]"/>}
+                          </button>
+                          {projectTeamMembers.map((member) => {
+                          const active = isPersonActive(member.name);
+                          return (<button key={member.id} type="button" onClick={() => togglePersonFilter(member.name)} className={menuItemClass(active)}>
+                                <span className="truncate">{member.name}</span>
+                                {active && <Check className="w-3.5 h-3.5 text-[#0052cc] flex-shrink-0"/>}
+                              </button>);
+                      })}
+                        </div>)}
+                    </div>
+
+                    {/* Compact initial avatars: Collapsed [R][P][S][D][K][+1 Show more] | Expanded [R][P][S][D][K][N][User Icon][Show less] */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center -space-x-1">
+                        {(isAssigneesExpanded ? uniqueIterationAssignees : uniqueIterationAssignees.slice(0, 5)).map((assignee) => {
+                          const active = isPersonActive(assignee.name);
+                          return (
+                            <button
+                              key={assignee.name}
+                              type="button"
+                              onClick={() => togglePersonFilter(assignee.name)}
+                              title={`${assignee.name}${active ? ' (Filtered — click to remove)' : ' (Click to filter)'}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white transition-all hover:scale-110 hover:z-20 cursor-pointer shadow-xs ${
+                                active
+                                  ? 'ring-2 ring-[#0052cc] ring-offset-1 z-10 scale-105'
+                                  : 'ring-1 ring-white'
+                              }`}
+                              style={{ backgroundColor: assignee.avatarColor }}
+                            >
+                              {assignee.initial}
+                            </button>
+                          );
+                        })}
+                        {isAssigneesExpanded && (
+                          <div
+                            className="w-6 h-6 rounded-full bg-[#f4f5f7] border border-white flex items-center justify-center text-[#6b778c] flex-shrink-0 z-0"
+                            title="Assignees"
+                          >
+                            <User className="w-3 h-3 text-[#6b778c]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {uniqueIterationAssignees.length > 5 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAssigneesExpanded(!isAssigneesExpanded)}
+                          className="text-[11px] font-semibold text-[#0052cc] hover:underline cursor-pointer whitespace-nowrap ml-0.5"
+                        >
+                          {isAssigneesExpanded ? 'Show less' : `+${uniqueIterationAssignees.length - 5} Show more`}
                         </button>
-                        {projectTeamMembers.map((member) => {
-                        const active = activePersonFilters.includes(member.name);
-                        return (<button key={member.id} type="button" onClick={() => togglePersonFilter(member.name)} className={menuItemClass(active)}>
-                              <span className="truncate">{member.name}</span>
-                              {active && <Check className="w-3.5 h-3.5 text-[#0052cc] flex-shrink-0"/>}
-                            </button>);
-                    })}
-                      </div>)}
+                      )}
+                    </div>
                   </div>
 
+                  <span className="text-[#dfe1e6] select-none text-xs font-light flex-shrink-0" aria-hidden="true">|</span>
+
                   {/* Component (epic) */}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button type="button" onClick={() => setComponentFilterOpen(!componentFilterOpen)} className={filterBtnClass(Boolean(componentFilter))} aria-haspopup="listbox" aria-expanded={componentFilterOpen}>
                       <Layers className="w-3.5 h-3.5"/>
                       <span className="max-w-[110px] truncate">{componentFilter || 'Component'}</span>
@@ -2118,7 +2211,7 @@ const collapseAllSprints = () => {
                   </div>
 
                   {/* Status */}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button type="button" onClick={() => setStatusFilterOpen(!statusFilterOpen)} className={filterBtnClass(Boolean(statusFilter))} aria-haspopup="listbox" aria-expanded={statusFilterOpen}>
                       <Check className="w-3.5 h-3.5"/>
                       <span className="max-w-[110px] truncate">
@@ -2150,7 +2243,7 @@ const collapseAllSprints = () => {
                   </div>
 
                   {/* PI / release */}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button type="button" onClick={() => setPiFilterOpen(!piFilterOpen)} className={filterBtnClass(Boolean(piFilter))} aria-haspopup="listbox" aria-expanded={piFilterOpen}>
                       <Hash className="w-3.5 h-3.5"/>
                       <span className="max-w-[110px] truncate">{piFilter || 'PI'}</span>
@@ -2179,7 +2272,7 @@ const collapseAllSprints = () => {
                   </div>
 
                   {/* More filters */}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button type="button" onClick={() => setMoreFiltersOpen(!moreFiltersOpen)} className={filterBtnClass(onlyMyIssues || recentlyUpdatedOnly)} aria-haspopup="menu" aria-expanded={moreFiltersOpen}>
                       <Filter className="w-3.5 h-3.5"/>
                       <span>More Filters</span>

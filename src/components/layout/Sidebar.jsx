@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, Network, ListTodo, Bell, Settings, ClipboardList, CalendarRange, Bug, Activity, UsersRound, Layers, CheckSquare, PanelLeftClose, PanelLeftOpen, HeartPulse, Flag, X, ShieldCheck, Settings2, Compass, Hourglass, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Network, ListTodo, Bell, Settings, ClipboardList, CalendarRange, Bug, Activity, UsersRound, Layers, CheckSquare, PanelLeftClose, PanelLeftOpen, HeartPulse, Flag, X, ShieldCheck, Settings2, Compass, Hourglass, Sparkles, Clock, ArrowUpRight, Crown, GitBranch } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { useOrganizationBranding } from '../../store/adminSettingsStore';
+import { usePlanStore, getPlanHomePath } from '../../store/planStore';
+import { useTrialStore } from '../../store/trialStore';
+import { UpgradeModal } from '../trial/UpgradeModal';
 import { getRoleLabel, getDashboardPath } from '../../utils/roleUtils';
 import { getProjectUrl } from '../../utils/idUtils';
 import { isTrialUser, getTrialProjects, TRIAL_HOME_PATH } from '../../utils/trialAccess';
@@ -97,6 +100,12 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
     const { currentUser } = useAuthStore();
     const { notifications, projects, tasks } = useAppStore();
     const branding = useOrganizationBranding();
+    const { currentPlan } = usePlanStore();
+    const { workspace, getStats } = useTrialStore();
+    const trialStats = useMemo(() => {
+        return getStats ? getStats() : { daysTotal: 7, daysLeft: 4, expiresOn: 'Oct 30, 2026' };
+    }, [getStats, workspace]);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     if (!currentUser)
@@ -106,9 +115,21 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
     const iconOnly = width <= SIDEBAR_ICON_ONLY_BELOW;
     const unreadCount = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
     const flaggedCount = tasks.filter((t) => t.isFlagged).length;
-    const navItems = isTrialUser(currentUser)
-        ? getTrialNavItems(currentUser, projects, unreadCount)
-        : getNavItems(currentUser.role, unreadCount, flaggedCount);
+
+    const trialNavItems = [
+        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { label: 'Projects', path: '/projects', icon: FolderKanban },
+        { label: 'My Tasks', path: '/tasks', icon: ListTodo },
+        { label: 'Iterations', path: '/iterations', icon: GitBranch },
+        { label: 'Reports', path: '/reports', icon: Activity },
+        { label: 'Help & Guide', path: '/help', icon: Sparkles },
+    ];
+
+    const navItems = currentPlan === 'TRIAL'
+        ? trialNavItems
+        : isTrialUser(currentUser)
+            ? getTrialNavItems(currentUser, projects, unreadCount)
+            : getNavItems(currentUser.role, unreadCount, flaggedCount);
     // Trial accounts only count the projects their trial can open.
     const footerProjects = isTrialUser(currentUser)
         ? getTrialProjects(currentUser, projects)
@@ -120,11 +141,13 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
       {/* Logo & Navigation Collapse */}
       <div className={`p-3 flex-shrink-0 ${iconOnly ? 'px-2' : 'px-3'}`}>
         {!iconOnly ? (<div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-2.5 min-w-0 cursor-pointer group flex-1" onClick={() => navigate(getDashboardPath(currentUser.role))}>
+            <div className="flex items-center gap-2.5 min-w-0 cursor-pointer group flex-1" onClick={() => navigate(getPlanHomePath(currentUser, currentPlan))}>
               {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-white/15 group-hover:scale-105 transition-transform"/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" className="w-8 h-8 object-contain flex-shrink-0 group-hover:scale-105 transition-transform"/>)}
               <div className="min-w-0">
                 <span className="text-sm font-bold text-white tracking-tight font-display block truncate">Limber Lithe</span>
-                <span className="text-[10px] text-teal-400 font-medium truncate block">{getRoleLabel(currentUser.role)}</span>
+                <span className="text-[10px] text-teal-400 font-medium truncate block">
+                  {currentPlan === 'TRIAL' ? 'Free Trial' : getRoleLabel(currentUser.role)}
+                </span>
               </div>
             </div>
 
@@ -138,7 +161,7 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
                 <X className="w-4 h-4"/>
               </button>)}
           </div>) : (<div className="flex flex-col items-center py-1 gap-2">
-            {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title="Limber Lithe Dashboard" className="w-10 h-10 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-white/15" onClick={() => navigate(getDashboardPath(currentUser.role))}/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" title="Limber Lithe Dashboard" className="w-9 h-9 object-contain cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate(getDashboardPath(currentUser.role))}/>)}
+            {branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} title="Limber Lithe Dashboard" className="w-10 h-10 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform border border-white/15" onClick={() => navigate(getPlanHomePath(currentUser, currentPlan))}/>) : (<img src={`${import.meta.env.BASE_URL}limber-lithe-mark.png`} alt="Limber Lithe" title="Limber Lithe Dashboard" className="w-9 h-9 object-contain cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate(getPlanHomePath(currentUser, currentPlan))}/>)}
 
             {/* Expand button inside navigation bar when iconOnly */}
             {onToggleCollapse && (<button type="button" onClick={onToggleCollapse} className="w-10 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="Expand sidebar" aria-label="Expand sidebar">
@@ -162,9 +185,11 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
           </div>)}
         {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.path === '/admin' || item.path === '/pm' || item.path === '/tl' || item.path === '/member'
-                ? location.pathname === item.path
-                : location.pathname.startsWith(item.path);
+            const isActive = item.path === '/dashboard'
+                ? location.pathname === '/' || location.pathname === '/dashboard'
+                : item.path === '/admin' || item.path === '/pm' || item.path === '/tl' || item.path === '/member'
+                    ? location.pathname === item.path
+                    : location.pathname.startsWith(item.path);
             return (<NavLink key={item.path} to={item.path} onClick={onClose} title={iconOnly ? `${item.label}${item.badge ? ` (${item.badge})` : ''}` : undefined} className={`relative flex items-center transition-all duration-200 ${iconOnly
                     ? `justify-center w-11 h-11 mx-auto rounded-xl ${isActive
                         ? 'bg-[#0d9488]/20 text-[#2dd4bf]'
@@ -187,9 +212,48 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
 
       {/* Bottom Section */}
       <div className={`flex-shrink-0 border-t border-white/10 ${iconOnly ? 'px-2 py-3' : 'px-3 py-3'}`}>
-        {!iconOnly ? (<div className="p-3 rounded-xl bg-white/5 border border-white/5">
+        {currentPlan === 'TRIAL' ? (
+          !iconOnly ? (
+            <div className="bg-gradient-to-br from-teal-950/60 via-slate-900 to-teal-950/40 border border-teal-500/30 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-white">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-teal-400" />
+                  <span>{trialStats.daysTotal}-Day Trial</span>
+                </div>
+                <span className="text-[10px] font-bold text-teal-300 bg-teal-900/60 border border-teal-500/40 px-2 py-0.5 rounded-full">
+                  {trialStats.daysLeft} days left
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-teal-400 to-emerald-400 rounded-full transition-all"
+                  style={{ width: `${Math.round(((trialStats.daysTotal - trialStats.daysLeft) / trialStats.daysTotal) * 100)}%` }}
+                />
+              </div>
+              <div className="text-[10px] font-medium text-slate-400">Expires on {trialStats.expiresOn}</div>
+              <button
+                type="button"
+                onClick={() => setUpgradeModalOpen(true)}
+                className="w-full py-1.5 px-3 rounded-lg bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <span>Upgrade Plan</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setUpgradeModalOpen(true)}
+              className="w-10 h-10 mx-auto rounded-xl bg-teal-950 text-teal-400 border border-teal-500/40 hover:bg-teal-600 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              title="Upgrade Plan"
+            >
+              <Crown className="w-5 h-5" />
+            </button>
+          )
+        ) : !iconOnly ? (
+          <div className="p-3 rounded-xl bg-white/5 border border-white/5">
             <div className="flex items-center gap-2.5 mb-2">
-              <Avatar name={currentUser.name} color={currentUser.avatarColor} size="sm" className="w-8 h-8 rounded-lg"/>
+              <Avatar name={currentUser.name} color={currentUser.avatarColor} size="sm" className="w-8 h-8 rounded-lg" />
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-white truncate">{currentUser.name}</div>
                 <div className="text-[10px] text-slate-400 truncate">{branding.name}</div>
@@ -199,12 +263,17 @@ export const Sidebar = ({ width = SIDEBAR_DEFAULT_WIDTH, resizing = false, onTog
               <span className="truncate">{footerProjects.length} Projects</span>
               <span className="truncate flex-shrink-0 text-[#2dd4bf] font-semibold">{footerTaskCount} Tasks</span>
             </div>
-          </div>) : (<div className="flex flex-col items-center gap-2">
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
             <button onClick={() => navigate('/settings')} title="Settings" className="cursor-pointer hover:ring-2 hover:ring-white/20 rounded-lg transition-all">
-              <Avatar name={currentUser.name} color={currentUser.avatarColor} size="sm" className="w-9 h-9 rounded-lg"/>
+              <Avatar name={currentUser.name} color={currentUser.avatarColor} size="sm" className="w-9 h-9 rounded-lg" />
             </button>
-          </div>)}
+          </div>
+        )}
       </div>
+
+      <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
 
       {/* Drag-to-resize handle on the right edge (desktop only). Visible on
             hover/focus; continuous width updates come from AppShell's pointer

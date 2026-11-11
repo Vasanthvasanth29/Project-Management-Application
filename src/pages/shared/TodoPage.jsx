@@ -8,6 +8,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { getDueDateLabel, getDueDateClass, isDueToday, isOverdue } from '../../utils/dateUtils';
 import { issuePath } from '../../utils/issueUrl';
 import { toast } from 'sonner';
+import { usePlanStore } from '../../store/planStore';
+import { UpgradeModal } from '../../components/trial/UpgradeModal';
 export const TodoPage = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuthStore();
@@ -15,6 +17,10 @@ export const TodoPage = () => {
     const [filter, setFilter] = useState('ALL');
     const [showAdd, setShowAdd] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+    const { currentPlan } = usePlanStore();
+    const isTrial = currentPlan === 'TRIAL';
+    const TRIAL_MAX_PERSONAL_TASKS = 7;
     const [form, setForm] = useState({
         title: '',
         notes: '',
@@ -90,6 +96,10 @@ export const TodoPage = () => {
           </p>
         </div>
         <button className="btn-primary shadow-sm" onClick={() => {
+            if (!editingId && isTrial && personalCount >= TRIAL_MAX_PERSONAL_TASKS) {
+                setUpgradeModalOpen(true);
+                return;
+            }
             setEditingId(null);
             setForm({ title: '', notes: '', priority: 'MEDIUM', dueDate: new Date().toISOString().split('T')[0] });
             setShowAdd(!showAdd);
@@ -277,5 +287,6 @@ export const TodoPage = () => {
               </div>);
         }))}
       </div>
+      <UpgradeModal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
     </div>);
 };
