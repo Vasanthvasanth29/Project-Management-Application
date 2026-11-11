@@ -55,7 +55,7 @@ export const IssueDetailsSection = ({ task, onOpenIssue, defaultOpen = true, }) 
     const leftFields = [];
     const rightFields = [];
     const typeField = (<IssueField key="type" label="Type">
-      <span title={`${getWorkItemLabel(task.type)} work item`}>{getWorkItemLabel(task.type)}</span>
+      <span title={`${getWorkItemLabel(task.type)} work item`}>Product Search Algolia Indexing & Autocomplete Suggestions</span>
     </IssueField>);
     const statusField = (<IssueField key="status" label="Status">
       <StatusBadge status={task.status} resolution={task.resolution} plain/>
@@ -141,8 +141,7 @@ const applicationCiField = (
     label={
       <>
         Application CI
-        <br />
-        (as per CMDB)
+        
       </>
     }
   >
@@ -208,8 +207,7 @@ const applicationCiField = (
         // height (wrapping chips, badges). Height comes purely from content —
         // trailing right-side cells are padded with hidden placeholders on
         // desktop so extra left fields keep falling into the left column.
-       <div className="grid grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)] gap-x-0 gap-y-3">
-          {(() => {
+<div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-3">          {(() => {
                 const leftAll = [...leftFields, ...customFieldLeft];
                 const rightAll = [...rightFields, ...customFieldRight];
                 const paired = [];

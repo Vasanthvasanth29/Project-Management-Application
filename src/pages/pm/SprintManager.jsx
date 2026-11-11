@@ -39,7 +39,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
     const [quickTaskSprintId, setQuickTaskSprintId] = useState(null);
     const [quickTaskTitle, setQuickTaskTitle] = useState('');
     const [quickTaskPriority, setQuickTaskPriority] = useState('MEDIUM');
-    // Expanded sprints tracker (all expanded by default)
+    // Sprint cards are collapsed by default; users can expand them individually.
     const [expandedSprints, setExpandedSprints] = useState({});
     // Drag and Drop active highlight state
     const [draggingTaskId, setDraggingTaskId] = useState(null);
@@ -93,7 +93,7 @@ export const SprintManager = ({ projectId, initialSubView = 'overview', embedded
         projectSprints: sortProjectSprints(sprints, projectId),
     }), [tasks, users, projectRecord, projectId, projectKey, projectTeamMembers, sprints]);
     const isExpanded = (sprintId) => {
-        return expandedSprints[sprintId] !== undefined ? expandedSprints[sprintId] : true;
+        return expandedSprints[sprintId] !== undefined ? expandedSprints[sprintId] : false;
     };
     const toggleExpand = (sprintId) => {
         setExpandedSprints((prev) => ({
