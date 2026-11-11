@@ -40,6 +40,15 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
     const [filterMode, setFilterMode] = useState(() => currentUser?.role === 'ADMIN' ? 'all' : 'mine');
     const [filterMemberId, setFilterMemberId] = useState(null);
     const [showFewer, setShowFewer] = useState(true);
+    // Each Kanban column shows at most 3 cards initially.
+    // Expanding one column does not affect the other columns.
+    const [expandedColumns, setExpandedColumns] = useState({});
+    const toggleColumnExpanded = (columnKey) => {
+        setExpandedColumns((previous) => ({
+            ...previous,
+            [columnKey]: !previous[columnKey],
+        }));
+    };
     const visibleTasks = useMemo(() => {
         if (filterMode === 'mine') {
             return sprintTasks.filter((t) => t.assigneeId === currentUser?.id);
@@ -441,6 +450,11 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
         navigate(issuePath(taskId));
     };
     const displayedMembers = showFewer ? projectTeamMembers.slice(0, 8) : projectTeamMembers;
+
+    // Show two cards by default in every column.
+    // Any additional cards are available through that column's Show more button.
+    const sharedVisibleLimit = 2;
+
     return (<div className="p-4 bg-[#f8fafd] flex flex-col min-h-[calc(100vh_-_26rem)]">
       {/* Filters */}
       <div className="flex items-center gap-1.5 flex-wrap mb-3 flex-shrink-0">
@@ -462,7 +476,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
       </div>
 
       {/* 3-column board */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-2 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         {BOARD_COLUMNS.map((col) => {
             const colTasks = columnTasks(col.key);
             const isOver = dragOverColumn === col.key;
@@ -473,6 +487,11 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
             const orderedTasks = col.key === 'DONE'
                 ? [...colTasks.filter(cancelledOf), ...colTasks.filter((t) => !cancelledOf(t))]
                 : colTasks;
+            const isColumnExpanded = Boolean(expandedColumns[col.key]);
+            const displayedColumnTasks = isColumnExpanded
+                ? orderedTasks
+                : orderedTasks.slice(0, sharedVisibleLimit);
+            const hiddenTaskCount = Math.max(0, orderedTasks.length - displayedColumnTasks.length);
             // Two compact drag-only drop targets appear inside DONE while a card is
             // dragged over it; they never render outside the drag interaction.
             const showDoneTargets = col.key === 'DONE' && isOver;
@@ -480,7 +499,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
             // state (targets only). Same-column drags keep the cards so reordering
             // inside DONE still works.
             const hideDoneCards = showDoneTargets && draggingFromColumn !== 'DONE';
-            return (<div key={col.key} data-column={col.key} onDragOver={(e) => handleColumnDragOver(e, col.key)} onDragLeave={handleColumnDragLeave} onDrop={(e) => handleColumnDrop(e, col.key)} className={`rounded-2xl p-3 border transition-all duration-150 flex flex-col min-h-[320px] ${col.key === 'DONE'
+            return (<div key={col.key} data-column={col.key} onDragOver={(e) => handleColumnDragOver(e, col.key)} onDragLeave={handleColumnDragLeave} onDrop={(e) => handleColumnDrop(e, col.key)} className={`self-start h-fit rounded-2xl p-3 border transition-all duration-150 flex flex-col min-h-[180px] ${col.key === 'DONE'
                     ? // DONE never becomes a full-column green overlay — the two
                         // drop targets carry all of its drag feedback.
                         isBlocked
@@ -501,7 +520,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                 </span>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 scrollbar-thin flex flex-col gap-2">
+              <div className="min-h-0 pr-0.5 flex flex-col gap-2">
                 {showDoneTargets && (
                 /* Drag-only drop targets: visible exclusively while a card is
                    dragged validly over DONE, gone the moment the drag ends. */
@@ -524,7 +543,7 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                 {!hideDoneCards &&
                     (colTasks.length === 0 ? (<div className={`flex-1 min-h-[120px] rounded-xl border border-dashed flex flex-col items-center justify-center text-center text-xs transition-colors ${isOver ? 'border-emerald-500 text-emerald-700 font-semibold bg-white/70' : 'border-slate-300 text-slate-400'}`}>
                     <span>{isOver ? `Drop to move to ${col.label}` : `No items in ${col.label}`}</span>
-                  </div>) : (orderedTasks.map((task) => {
+                  </div>) : (displayedColumnTasks.map((task) => {
                         const assignee = users.find((u) => u.id === task.assigneeId);
                         const epicTitle = resolveEpicTitle(task);
                         const typeBadge = TYPE_BADGE[task.type] || TYPE_BADGE.TASK;
@@ -583,6 +602,17 @@ export const SprintKanbanBoard = ({ projectId, sprint, sprintTasks }) => {
                         </div>
                       </div>);
                     })))}
+                {orderedTasks.length > sharedVisibleLimit && !showDoneTargets && (
+                  <button
+                    type="button"
+                    onClick={() => toggleColumnExpanded(col.key)}
+                    className="w-full mt-1 py-2 px-3 rounded-lg border border-dashed border-slate-300 bg-slate-50/70 text-[11px] font-semibold text-[#0052cc] hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    {isColumnExpanded
+                      ? 'Show less'
+                      : `Show ${hiddenTaskCount} more`}
+                  </button>
+                )}
               </div>
 
               {/* Quick add */}

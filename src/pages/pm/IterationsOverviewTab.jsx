@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useContext, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp,ChevronsDown, ListTodo } from 'lucide-react';
+import { Flag, Filter, Search, MoreHorizontal, ChevronDown, ChevronRight, ChevronLeft, ChevronsUp, Users, ExternalLink, Plus, X, Layers, Calendar, Check, FileText, Hash, Edit3, Trash2, Eye, CalendarRange, CalendarDays, Archive, ListTree, Play, CheckCircle, FolderInput, ChevronUp, ChevronsDown, ListTodo, Pin } from 'lucide-react';
+import { flushSync } from 'react-dom';
 import { toast } from 'sonner';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -153,6 +154,13 @@ export const IterationsOverviewTab = ({ projectId, view = 'cadence' }) => {
     const sprintDisplayTitle = formatSprintTitle(currentSprint);
     // Project team members for Quick Filters
     const projectTeamMembers = useMemo(() => buildProjectTeamMembers(project, teams, users), [project, teams, users]);
+    const quickFilterAssignees = useMemo(() => {
+        const seen = new Set();
+        return projectTeamMembers
+            .filter((member) => member?.name && !seen.has(member.name) && seen.add(member.name))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [projectTeamMembers]);
+
     // Per-iteration issue lists: the sprint's real work items first, topped up with
     // domain seed items so every expandable iteration section renders with realistic
     // volume. Shared with the Issue Search page so both views show identical records.
@@ -710,6 +718,38 @@ const collapseAllSprints = () => {
     // as in the PI plan the page used before).
     const iterationSource = useMemo(() => projectSprints.filter((s) => !s.isArchived), [projectSprints]);
     const [iterationQuery, setIterationQuery] = useState('');
+    const [isIterationSidebarCollapsed, setIsIterationSidebarCollapsed] = useState(false);
+    const toggleIterationSidebar = (collapsed) => {
+      const apply = () => setIsIterationSidebarCollapsed(collapsed);
+      const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (typeof document === 'undefined' || !document.startViewTransition || reduceMotion) { apply(); return; }
+      document.startViewTransition(() => { flushSync(apply); });
+    };
+    const [showQuickFilterModule, setShowQuickFilterModule] = useState(false);
+    const [quickFilterSearch, setQuickFilterSearch] = useState('');
+    // Keep pinned assignees in localStorage, scoped by project, so they survive refreshes.
+    const [pinnedAssigneesByProject, setPinnedAssigneesByProject] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('iteration-pinned-assignees') || '{}');
+        } catch {
+            return {};
+        }
+    });
+    const pinnedAssignees = pinnedAssigneesByProject[projectId] || [];
+    const setPinnedAssignees = (update) => {
+        setPinnedAssigneesByProject((prev) => {
+            const current = prev[projectId] || [];
+            const next = typeof update === 'function' ? update(current) : update;
+            return { ...prev, [projectId]: next };
+        });
+    };
+    useEffect(() => {
+        try {
+            localStorage.setItem('iteration-pinned-assignees', JSON.stringify(pinnedAssigneesByProject));
+        } catch (error) {
+            console.warn('Could not save pinned assignees:', error);
+        }
+    }, [pinnedAssigneesByProject]);
     const [statusTab, setStatusTab] = useState(isCompletedView ? 'COMPLETED' : 'ALL');
 
     useEffect(() => {
@@ -1363,7 +1403,7 @@ const collapseAllSprints = () => {
     const filterBtnClass = (active) => `inline-flex items-center gap-1.5 h-7 px-2 rounded-md border text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${active
         ? 'border-[#b3d4ff] bg-[#deebff] text-[#0052cc]'
         : 'border-[#dfe1e6] bg-white text-[#42526e] hover:bg-[#f4f5f7] hover:text-[#172b4d]'}`;
-    const filterMenuClass = 'absolute left-0 top-full mt-1 min-w-[13rem] max-h-64 overflow-y-auto bg-white rounded-lg border border-[#dfe1e6] shadow-lg py-1.5 z-50 animate-scale-in';
+    const filterMenuClass = 'absolute left-0 top-full mt-1 min-w-[13rem] max-h-64 overflow-y-auto bg-white rounded-lg border border-[#dfe1e6] shadow-lg py-1.5 z-[9999] animate-scale-in';
     const menuItemClass = (active) => `w-full text-left px-3 py-1.5 text-xs flex items-center justify-between gap-2 hover:bg-[#f4f5f7] transition-colors cursor-pointer ${active ? 'font-bold text-[#0052cc]' : 'text-[#42526e]'}`;
     // ------------------------------------------------------------------
     // Left-panel iteration card: number, status, dates, work-item counts,
@@ -1380,7 +1420,6 @@ const collapseAllSprints = () => {
         const isSelected = sprint.id === selectedSprintId;
         const isOpen = isSelected && isSprintOpen(sprint.id);
         const cardTitle = sprint.iterationNumber || getSprintIdentifier(sprint);
-        const canStart = canManage && sprint.status === 'PLANNED';
         const accentColor = sprint.status === 'ACTIVE' ? 'bg-[#0d9488]' : sprint.status === 'COMPLETED' ? 'bg-[#059669]' : 'bg-[#94a3b8]';
         return (<div key={sprint.id} data-sprint-card={sprint.id} role="button" tabIndex={0} aria-current={isSelected} onClick={() => {
                 if (dropJustHappened())
@@ -1436,14 +1475,6 @@ const collapseAllSprints = () => {
           </span>
         </div>
 
-        {canStart && (<div className="mt-0.5 flex items-center justify-end">
-            <button type="button" onClick={(e) => {
-                    e.stopPropagation();
-                    handleStartSprint(sprint);
-                }} className="text-[10px] leading-tight font-semibold text-[#0052cc] hover:underline px-1.5 py-0.5 rounded hover:bg-[#deebff] transition-colors cursor-pointer" title="Start this iteration">
-              Start iteration
-            </button>
-          </div>)}
       </div>);
     };
     // ------------------------------------------------------------------
@@ -1625,9 +1656,35 @@ const collapseAllSprints = () => {
               </button>) : (<button onClick={() => openCreateIteration(projectPis.find((p) => canCreateIterationInPi(p, sprints))?.id)} className="mt-4 px-4 py-2 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] text-xs font-bold cursor-pointer">
                 + Create Iteration
               </button>))}
-        </div>) : (<div className="grid grid-cols-1 lg:grid-cols-[228px_minmax(0,1fr)] gap-2.5 items-start">
+        </div>) : (<>
+<style>{`
+::view-transition-group(iteration-list),
+::view-transition-group(iteration-summary),
+::view-transition-group(iteration-table) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*) { animation: none !important; } }
+`}</style>
+<div className="flex items-center justify-start min-h-7">
+          <button
+            type="button"
+            onClick={() => toggleIterationSidebar(!isIterationSidebarCollapsed)}
+            className="inline-flex items-center justify-center gap-1.5 h-7 px-2 rounded-md border border-[#dfe1e6] bg-white text-[11px] font-semibold text-[#42526e] hover:bg-[#f4f5f7] hover:text-[#172b4d] transition-colors cursor-pointer shadow-xs"
+            title={isIterationSidebarCollapsed ? "Expand iterations panel" : "Collapse iterations panel"}
+            aria-label={isIterationSidebarCollapsed ? "Expand iterations sidebar" : "Collapse iterations sidebar"}
+          >
+            {isIterationSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+            <span>{isIterationSidebarCollapsed ? "Expand iterations" : "Collapse iterations"}</span>
+          </button>
+        </div>
+<div className={`relative grid grid-cols-1 ${isIterationSidebarCollapsed ? "lg:grid-cols-[minmax(0,1fr)]" : "lg:grid-cols-[240px_minmax(0,1fr)]"} ${isIterationSidebarCollapsed ? "gap-x-6" : "gap-x-5"} ${isIterationSidebarCollapsed ? "gap-y-2.5" : "gap-y-5 lg:grid-rows-[auto_1fr]"} items-start transition-[grid-template-columns,column-gap] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none`}>
           {/* ============================ LEFT COLUMN — iteration list ============================ */}
-          <aside className="flex flex-col gap-2">
+          <div className={isIterationSidebarCollapsed ? "relative z-[80] lg:col-span-full lg:row-start-1 lg:grid lg:grid-cols-[minmax(0,1fr)] lg:items-start bg-white rounded-lg border border-[#dfe1e6] shadow-xs p-2" : "lg:contents"}>
+          <aside style={{ viewTransitionName: 'iteration-list' }} className={`relative z-[80] flex flex-col gap-2 min-w-0 lg:col-start-1 lg:row-start-1 ${isIterationSidebarCollapsed ? "hidden" : "lg:row-span-2"} transition-all duration-300 ease-in-out`}>
+            {!isIterationSidebarCollapsed ? <>
+         
             <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b778c]"/>
@@ -1755,6 +1812,7 @@ const collapseAllSprints = () => {
                   Reset
                 </button>)}
             </div>
+            </> : <div className="w-full min-h-8 pt-8" />}
           </aside>
 
           {/* ============================ RIGHT COLUMN — selected iteration or Work Queue ============================ */}
@@ -1779,7 +1837,6 @@ const collapseAllSprints = () => {
                   <Plus className="w-3.5 h-3.5"/> Create Iteration
                 </button>)}
             </section>)}
-          <section className={showPiEmpty ? "hidden" : "min-w-0 flex flex-col gap-2"}>
             {/* Unified summary + filter card — ONE card holds the first row
                 (the Work Queue summary when the Work Queue is selected,
                 otherwise the compact iteration summary: iteration number,
@@ -1788,8 +1845,9 @@ const collapseAllSprints = () => {
                 work-items table lives in a separate card directly below.
                 The card must NOT be overflow-hidden so the ⋯ menu, status
                 dropdown and filter selects can open past its edge. */}
-            <div className="bg-white rounded-lg border border-[#dfe1e6] shadow-xs">
+            <div style={{ viewTransitionName: 'iteration-summary' }} className={`relative z-[60] min-w-0 bg-white rounded-lg border border-[#dfe1e6] shadow-xs ${isIterationSidebarCollapsed ? "lg:col-start-1" : "lg:col-start-2"} lg:row-start-1 ${isIterationSidebarCollapsed ? "lg:border-0 lg:shadow-none lg:bg-transparent" : ""} ${showPiEmpty ? "hidden" : ""}`}>
               {isWorkQueueSelected ? (<div className={`px-3 py-2 flex flex-wrap items-start justify-between gap-2 ${currentOpen ? 'border-b border-[#ebecf0]' : ''}`} data-iteration-summary>
+                  <button type="button" onClick={() => setExpandedSprintIds((prev) => ({ ...prev, [WORK_QUEUE_SELECTION_ID]: !currentOpen }))} className="p-1 -ml-1 rounded-md text-[#6b778c] hover:bg-[#ebecf0] hover:text-[#172b4d] transition-colors cursor-pointer flex-shrink-0 self-center" title={currentOpen ? 'Collapse work items' : 'Expand work items'} aria-label={currentOpen ? 'Collapse work items' : 'Expand work items'} aria-expanded={currentOpen}>{currentOpen ? <ChevronDown className="w-4 h-4"/> : <ChevronRight className="w-4 h-4"/>}</button>
                   <div className="min-w-0 flex flex-col gap-1">
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h2 className="text-2xl font-bold text-[#172b4d] tracking-tight">Work Queue</h2>
@@ -1854,6 +1912,7 @@ const collapseAllSprints = () => {
                     </button>
                   </div>
                 </div>) : (<div className={`px-3 py-1 min-h-[38px] flex items-center gap-x-2 gap-y-1 flex-wrap ${currentOpen ? 'border-b border-[#ebecf0]' : ''}`} data-iteration-summary data-iteration-compact-header>
+                <button type="button" onClick={() => setExpandedSprintIds((prev) => ({ ...prev, [currentSprint.id]: !currentOpen }))} className="p-1 -ml-1 rounded-md text-[#6b778c] hover:bg-[#ebecf0] hover:text-[#172b4d] transition-colors cursor-pointer flex-shrink-0 self-center" title={currentOpen ? 'Collapse work items' : 'Expand work items'} aria-label={currentOpen ? 'Collapse work items' : 'Expand work items'} aria-expanded={currentOpen}>{currentOpen ? <ChevronDown className="w-4 h-4"/> : <ChevronRight className="w-4 h-4"/>}</button>
                 <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                     {currentPiNumber !== undefined && (<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f0fdfa] border border-[#99f6e4] text-[10px] font-bold text-[#0f766e] flex-shrink-0">
                         PI {currentPiNumber}
@@ -2051,13 +2110,15 @@ const collapseAllSprints = () => {
               </div>)}
 
               {/* Filter row — row 2 of the unified summary card (hidden while collapsed) */}
-              {currentOpen && (<div className="px-3 py-1 flex items-center gap-1.5 flex-wrap">
-                  <div className="relative flex-1 min-w-[130px] max-w-[208px]">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b778c]"/>
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search work items..." aria-label="Search work items" className="w-full pl-8 pr-7 py-1 text-xs bg-white border border-[#dfe1e6] rounded-md focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff] outline-none transition-all placeholder:text-[#9aa0a6]"/>
-                    {searchQuery && (<button type="button" onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9aa0a6] hover:text-[#42526e] cursor-pointer" aria-label="Clear work item search">
-                        <X className="w-3 h-3"/>
-                      </button>)}
+              {currentOpen && (<div className="relative z-[70] px-3 py-1 flex items-center gap-1.5 flex-nowrap overflow-visible">
+                  <div className="flex-1 min-w-[130px] max-w-[350px]">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b778c]"/>
+                      <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search work items..." aria-label="Search work items" className="w-full pl-8 pr-7 py-1 text-xs bg-white border border-[#dfe1e6] rounded-md focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff] outline-none transition-all placeholder:text-[#9aa0a6]"/>
+                      {searchQuery && (<button type="button" onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9aa0a6] hover:text-[#42526e] cursor-pointer" aria-label="Clear work item search">
+                          <X className="w-3 h-3"/>
+                        </button>)}
+                    </div>
                   </div>
 
                   {/* Assignee (existing person quick filters) */}
@@ -2186,7 +2247,7 @@ const collapseAllSprints = () => {
                       {(onlyMyIssues || recentlyUpdatedOnly) && (<span className="w-1.5 h-1.5 rounded-full bg-[#0052cc]" aria-hidden/>)}
                       <ChevronDown className="w-3 h-3 text-[#6b778c]"/>
                     </button>
-                    {moreFiltersOpen && (<div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg border border-[#dfe1e6] shadow-lg py-1.5 z-50 animate-scale-in">
+                    {moreFiltersOpen && (<div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg border border-[#dfe1e6] shadow-lg py-1.5 z-[9999] animate-scale-in">
                         <div className="px-3 py-1 text-[9px] font-black tracking-wider text-[#6b778c] border-b border-[#ebecf0]">
                           Quick Filters
                         </div>
@@ -2209,6 +2270,25 @@ const collapseAllSprints = () => {
                       </div>)}
                   </div>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeWorkItemMenus();
+                      setShowQuickFilterModule(true);
+                    }}
+                    className={filterBtnClass(pinnedAssignees.length > 0)}
+                    aria-haspopup="dialog"
+                    aria-expanded={showQuickFilterModule}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Quick Filter</span>
+                    {pinnedAssignees.length > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-[#0052cc] text-white text-[9px]">
+                        {pinnedAssignees.length}
+                      </span>
+                    )}
+                  </button>
+
                   {isWorkQueueSelected && (<div className="ml-auto flex items-center gap-2">
                       <span className="text-[11px] text-[#6b778c] tabular-nums whitespace-nowrap">
                         {filteredIssues.length} of {currentIssues.length} work items
@@ -2225,7 +2305,146 @@ const collapseAllSprints = () => {
                     </div>)}
                 </div>)}
 
+              {pinnedAssignees.length > 0 && (
+                <div className="px-3 pb-2 flex flex-wrap items-center gap-1.5" aria-label="Pinned assignee filters">
+                  {pinnedAssignees.map((name) => {
+                    const active = activePersonFilters.includes(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => togglePersonFilter(name)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[10px] font-semibold whitespace-nowrap transition-colors ${
+                          active
+                            ? 'border-[#0052cc] bg-[#deebff] text-[#0052cc]'
+                            : 'border-[#dfe1e6] bg-white text-[#42526e] hover:bg-[#f4f5f7]'
+                        }`}
+                        title={`Filter work items assigned to ${name}`}
+                      >
+                        <Pin className="w-2.5 h-2.5" />
+                        <span>{name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+          </div>
+
+          <div style={{ viewTransitionName: 'iteration-table' }} className={`min-w-0 ${showPiEmpty ? "hidden" : ""} ${isIterationSidebarCollapsed ? "lg:col-span-full lg:col-start-1 lg:row-start-2" : "lg:col-start-2 lg:row-start-2 lg:self-start"}`}>
+            {showQuickFilterModule && (
+              <div className="fixed inset-0 z-[100] bg-slate-950/35 backdrop-blur-[2px] flex items-center justify-center p-4">
+                <section
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="quick-filter-title"
+                  className="w-full max-w-xl max-h-[80vh] flex flex-col bg-white rounded-xl border border-[#dfe1e6] shadow-2xl overflow-hidden animate-scale-in"
+                >
+                  <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#ebecf0]">
+                    <div>
+                      <h2 id="quick-filter-title" className="text-base font-bold text-[#172b4d]">Quick Filter</h2>
+                      <p className="text-xs text-[#6b778c] mt-0.5">Choose an assignee and pin names for quick access</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickFilterModule(false)}
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-md text-[#6b778c] hover:bg-[#f4f5f7] hover:text-[#172b4d]"
+                      aria-label="Close Quick Filter"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 border-b border-[#ebecf0]">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9aa0a6]" />
+                      <input
+                        type="text"
+                        value={quickFilterSearch}
+                        onChange={(e) => setQuickFilterSearch(e.target.value)}
+                        placeholder="Search assignees..."
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-[#dfe1e6] rounded-lg outline-none focus:border-[#4c9aff] focus:ring-1 focus:ring-[#4c9aff]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-2 flex items-center justify-between text-[11px] text-[#6b778c] bg-[#fafbfc]">
+                    <span>{quickFilterAssignees.length} assignees</span>
+                    <span>{pinnedAssignees.length} pinned</span>
+                  </div>
+
+                  <div className="p-3 overflow-y-auto flex flex-col gap-1">
+                    {quickFilterAssignees
+                      .filter((member) => member.name.toLowerCase().includes(quickFilterSearch.trim().toLowerCase()))
+                      .map((member) => {
+                        const isPinned = pinnedAssignees.includes(member.name);
+                        const isActive = activePersonFilters.includes(member.name);
+                        return (
+                          <div key={member.id || member.name} className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                            isActive ? 'border-[#b3d4ff] bg-[#f0f7ff]' : 'border-transparent hover:bg-[#f8fafc]'
+                          }`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActivePersonFilters([member.name]);
+                                setShowQuickFilterModule(false);
+                              }}
+                              className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                            >
+                              <span className="w-8 h-8 rounded-full bg-[#deebff] text-[#0052cc] flex items-center justify-center text-xs font-bold">
+                                {member.name.charAt(0).toUpperCase()}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-semibold text-[#172b4d] truncate">{member.name}</span>
+                                <span className="block text-[10px] text-[#9aa0a6]">{isActive ? 'Currently filtering' : 'Click to filter work items'}</span>
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPinnedAssignees((prev) => (
+                                isPinned ? prev.filter((name) => name !== member.name) : [...prev, member.name]
+                              ))}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors ${
+                                isPinned
+                                  ? 'border-[#b3d4ff] bg-[#deebff] text-[#0052cc]'
+                                  : 'border-[#dfe1e6] bg-white text-[#42526e] hover:bg-[#f4f5f7]'
+                              }`}
+                              aria-label={isPinned ? `Unpin ${member.name}` : `Pin ${member.name}`}
+                              title={isPinned ? 'Unpin assignee' : 'Pin assignee'}
+                            >
+                              <Pin className="w-3.5 h-3.5" />
+                              {isPinned ? 'Pinned' : 'Pin'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    {quickFilterAssignees.filter((member) => member.name.toLowerCase().includes(quickFilterSearch.trim().toLowerCase())).length === 0 && (
+                      <p className="py-8 text-center text-sm text-[#9aa0a6]">No assignees found.</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-[#ebecf0]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPinnedAssignees([]);
+                        setActivePersonFilters([]);
+                      }}
+                      className="text-xs font-semibold text-red-600 hover:underline"
+                    >
+                      Clear pinned and active filters
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickFilterModule(false)}
+                      className="px-4 py-2 rounded-md bg-[#0052cc] text-white text-xs font-bold hover:bg-[#0747a6]"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
 
             {/* Work items table — a separate card directly below the unified
                 summary + filter card (8px gap). It holds only the table; the
@@ -2243,7 +2462,7 @@ const collapseAllSprints = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full table-fixed text-xs">
                     <colgroup>
-                      <col className="w-[28px]"/>
+                      <col className="w-[32px]"/>
                       <col className="w-[40px]"/>
                       <col className="w-[112px]"/>
                       <col />
@@ -2255,7 +2474,7 @@ const collapseAllSprints = () => {
                     </colgroup>
                     <thead>
                       <tr className="bg-[#fafbfc] border-b border-[#dfe1e6] text-[10px] tracking-wider text-[#6b778c]">
-                        <th className="px-3 py-1.5 text-left font-bold">
+                        <th className="pl-2 pr-1 py-1.5 text-left font-bold">
                           <input type="checkbox" aria-label="Select all work items" checked={filteredIssues.length > 0 && filteredIssues.every((issue) => selectedIssueIds.includes(issue.id))} onChange={(e) => {
                     const visibleIds = filteredIssues.map((issue) => issue.id);
                     setSelectedIssueIds((prev) => e.target.checked
@@ -2292,7 +2511,7 @@ const collapseAllSprints = () => {
                     const isDone = issue.status === 'DONE';
                     const isSelected = selectedIssueIds.includes(issue.id);
                     return (<tr key={issue.id} data-work-item-row={issue.id} draggable onDragStart={(e) => handleDndDragStart(e, issue, isWorkQueueSelected ? null : currentSprint.id)} onDragEnd={handleDndDragEnd} onClick={(e) => handleOpenTask(issue, e.ctrlKey || e.metaKey, isWorkQueueSelected ? null : currentSprint.id)} className={`border-b border-[#f1f2f4] transition-colors cursor-grab active:cursor-grabbing ${dndSource?.issue.id === issue.id ? 'opacity-40' : ''} ${isSelected ? 'bg-[#deebff]/40' : 'bg-white hover:bg-[#f7f9fc]'}`}>
-                              <td className={`px-2 py-1 align-middle border-l-[3px] ${typeAccent[String(issue.type).toUpperCase().replace(/_/g, '-')] || 'border-l-[#94a3b8]'}`} onClick={(e) => e.stopPropagation()}>
+                              <td className={`pl-2 pr-1 py-1 align-middle border-l-[3px] ${typeAccent[String(issue.type).toUpperCase().replace(/_/g, '-')] || 'border-l-[#94a3b8]'}`} onClick={(e) => e.stopPropagation()}>
                                 <input type="checkbox" checked={isSelected} onChange={(e) => {
                             setSelectedIssueIds((prev) => prev.includes(issue.id)
                                 ? prev.filter((id) => id !== issue.id)
@@ -2414,8 +2633,8 @@ const collapseAllSprints = () => {
                 <ChevronDown className="w-4 h-4"/>
                 <span>Show work items ({currentIssues.length})</span>
               </button>)}
-          </section>
-        </div>)}
+          </div>
+        </div></>)}
 
 
       {/* Click-away backdrop closing any open row menu / popover / filter select */}
@@ -2429,7 +2648,7 @@ const collapseAllSprints = () => {
             statusFilterOpen ||
             piFilterOpen ||
             moreFiltersOpen ||
-            iterFilterOpen) && (<div className="fixed inset-0 z-40" onClick={() => {
+            iterFilterOpen) && (<div className="fixed inset-0 z-20" onClick={() => {
                 setMoreMenuSprintId(null);
                 setStatusDropdownSprintId(null);
                 setAssigneesPopoverSprintId(null);
@@ -2709,7 +2928,7 @@ const collapseAllSprints = () => {
                   Create Work Item
                 </button>
               </div>
-            </form>git fetch origin
+            </form>
 
           </div>
         </div>)}

@@ -186,11 +186,7 @@ export const ProductIncrementsTab = ({ projectId, onOpenIterations }) => {
             <td className="px-4 py-4 align-middle">
               <SprintStatusBadge status={row.status} />
               
-              {row.status === 'COMPLETED' && (
-                <div className="mt-1 text-xs text-slate-400">
-                  Completed PI — iterations can be viewed but not added.
-                </div>
-              )}
+         
             </td>
 
             {/* Date Range */}

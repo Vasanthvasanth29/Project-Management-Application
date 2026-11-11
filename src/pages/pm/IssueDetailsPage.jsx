@@ -678,73 +678,60 @@ const renderTransitionDetails = (transition) => (
         {emptyLabel}
       </p>
 
-    ) : activityTab === 'transitions' ? (
+   ) : activityTab === 'transitions' ? (
 
-      <div className="w-full">
+  <div className="w-full">
 
-        {/* Column Headers */}
-        <div className="grid grid-cols-[minmax(0,1fr)_190px_190px] max-md:grid-cols-1 gap-3 pb-2 border-b border-[#e2e5ea]">
+    {/* Column Headers */}
+    <div className="grid grid-cols-[minmax(0,1fr)_190px] max-md:grid-cols-1 gap-3 pb-2 border-b border-[#e2e5ea]">
 
-          <div className="fe-meta font-semibold tracking-wider">
-            Transition
+      <div className="fe-meta font-semibold tracking-wider">
+        Transition
+      </div>
+
+      <div className="fe-meta font-semibold tracking-wider">
+        Transition Date
+      </div>
+
+    </div>
+
+    {/* Transition Records */}
+    {statusTransitions.length === 0 ? (
+
+      <p className="fe-meta text-center py-5">
+        No status changes yet
+      </p>
+
+    ) : (
+
+      statusTransitions.map((transition) => (
+
+        <div
+          key={transition.id}
+          className="grid grid-cols-[minmax(0,1fr)_190px] max-md:grid-cols-1 gap-3 items-center py-2.5 border-b border-[#eef0f3]"
+        >
+
+          {/* User Name and Status */}
+          <div className="min-w-0">
+            {renderTransitionDetails(transition)}
           </div>
 
-          <div className="fe-meta font-semibold tracking-wider">
-            Transition Date
-          </div>
-
-          <div className="fe-meta font-semibold tracking-wider">
-            Status Started At
+          {/* Actual Transition Date */}
+          <div className="min-w-0">
+            <span className="fe-control tabular-nums whitespace-nowrap">
+              {formatTransitionDateTime(transition.changedAt)}
+            </span>
           </div>
 
         </div>
 
-        {/* Transition Records */}
-        {statusTransitions.length === 0 ? (
+      ))
 
-          <p className="fe-meta text-center py-5">
-            No status changes yet
-          </p>
+    )}
 
-        ) : (
+  </div>
 
-          statusTransitions.map((transition) => (
-
-            <div
-              key={transition.id}
-              className="grid grid-cols-[minmax(0,1fr)_190px_190px] max-md:grid-cols-1 gap-3 items-center py-2.5 border-b border-[#eef0f3]"
-            >
-
-              {/* User Name and Status */}
-              <div className="min-w-0">
-                {renderTransitionDetails(transition)}
-              </div>
-
-              {/* Actual Transition Date */}
-              <div className="min-w-0">
-                <span className="fe-control tabular-nums whitespace-nowrap">
-                  {formatTransitionDateTime(transition.changedAt)}
-                </span>
-              </div>
-
-              {/* Source Status Started Date */}
-              <div className="min-w-0">
-                <span className="fe-control tabular-nums whitespace-nowrap">
-                  {formatTransitionDateTime(
-                    sourceEnteredAtFor(transition)
-                  )}
-                </span>
-              </div>
-
-            </div>
-
-          ))
-
-        )}
-
-      </div>
-
-    ) : (
+) : (
 
       <div className="space-y-2">
         {activityFeed.map((entry) => (
